@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOIR Fashion</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&amp;family=Outfit:wght@200;300;400;500;600&amp;display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { font-family: 'Outfit', sans-serif; }
+
+        .font-display { font-family: 'Cormorant Garamond', serif; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        @keyframes floatBadge {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-6px) rotate(2deg); }
+        }
+
+        .anim-fade-up { animation: fadeUp 0.8s ease-out forwards; opacity: 0; }
+        .anim-fade-in { animation: fadeIn 0.6s ease-out forwards; opacity: 0; }
+        .anim-slide-down { animation: slideDown 0.5s ease-out forwards; opacity: 0; }
+        .anim-scale-in { animation: scaleIn 0.6s ease-out forwards; opacity: 0; }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+        .delay-4 { animation-delay: 0.4s; }
+        .delay-5 { animation-delay: 0.5s; }
+        .delay-6 { animation-delay: 0.6s; }
+        .delay-7 { animation-delay: 0.7s; }
+        .delay-8 { animation-delay: 0.8s; }
+
+        .marquee-track {
+            display: flex;
+            width: max-content;
+            animation: marquee 20s linear infinite;
+        }
+
+        .product-card {
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+        }
+        .product-card:hover .product-overlay {
+            opacity: 1;
+        }
+        .product-card:hover .product-img {
+            transform: scale(1.05);
+        }
+
+        .product-img {
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .product-overlay {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .btn-noir {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .btn-noir::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: rgba(255,255,255,0.1);
+            transition: left 0.4s ease;
+        }
+        .btn-noir:hover::after {
+            left: 100%;
+        }
+
+        .fav-btn {
+            transition: all 0.3s ease;
+        }
+        .fav-btn.active svg {
+            fill: currentColor;
+        }
+
+        .filter-btn {
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .filter-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 50%;
+            width: 0; height: 1px;
+            background: currentColor;
+            transition: all 0.3s ease;
+            transform: translateX(-50%);
+        }
+        .filter-btn:hover::after, .filter-btn.active::after {
+            width: 100%;
+        }
+
+        .cart-badge {
+            animation: floatBadge 3s ease-in-out infinite;
+        }
+
+        .scroll-reveal { opacity: 0; transform: translateY(30px); transition: all 0.7s ease; }
+        .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+
+        .hero-pattern {
+            background-image:
+                    linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.03) 51%, transparent 52%),
+                    linear-gradient(-45deg, transparent 48%, rgba(255,255,255,0.03) 49%, rgba(255,255,255,0.03) 51%, transparent 52%);
+            background-size: 60px 60px;
+        }
+
+        .toast-notification {
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .toast-notification.show {
+            transform: translateX(0);
+        }
+
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; left: 0;
+            width: 0; height: 1px;
+            background: currentColor;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .about-line {
+            width: 0;
+            transition: width 1.2s ease;
+        }
+        .about-line.visible {
+            width: 80px;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+    <style>body { box-sizing: border-box; }</style>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+</head>
+<body class="h-full">
+<div id="app-wrapper" class="w-full h-full overflow-auto" style="background:#000; color:#fff;"><!-- Toast -->
+    <div id="toast" class="toast-notification fixed top-24 right-4 z-50 px-5 py-3 flex items-center gap-3" style="background:#fff; color:#000;"><i data-lucide="check-circle" style="width:18px; height:18px;"></i> <span id="toast-msg" class="text-sm font-medium" style="font-family:'Outfit',sans-serif;">Added to cart</span>
+    </div><!-- Cart Sidebar -->
+    <div id="cart-overlay" class="fixed inset-0 z-40 hidden" style="background:rgba(0,0,0,0.7);" onclick="toggleCart()"></div>
+    <div id="cart-sidebar" class="fixed top-0 right-0 z-50 h-full overflow-auto" style="width:380px; max-width:90%; background:#0a0a0a; border-left:1px solid #222; transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.25,0.46,0.45,0.94);">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="font-display text-2xl font-light tracking-wider">YOUR BAG</h3><button onclick="toggleCart()" class="p-2 hover:opacity-60 transition-opacity"><i data-lucide="x" style="width:20px;height:20px;"></i></button>
+            </div>
+            <div id="cart-items" class="space-y-4"></div>
+            <div id="cart-empty" class="text-center py-16 opacity-40"><i data-lucide="shopping-bag" style="width:48px;height:48px;margin:0 auto 16px;display:block;"></i>
+                <p class="text-sm tracking-widest uppercase">Your bag is empty</p>
+            </div>
+            <div id="cart-footer" class="hidden mt-8 pt-6" style="border-top:1px solid #222;">
+                <div class="flex justify-between mb-6"><span class="text-sm tracking-widest uppercase opacity-60">Total</span> <span id="cart-total" class="text-lg font-display">$0</span>
+                </div><button class="btn-noir w-full py-4 text-sm tracking-widest uppercase" style="background:#fff; color:#000;">Checkout</button>
+            </div>
+        </div>
+    </div><!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-30 anim-slide-down" style="background:rgba(0,0,0,0.85); backdrop-filter:blur(20px); border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <nav class="hidden md:flex items-center gap-8"><a href="#collection" class="nav-link text-xs tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity">Collection</a> <a href="#about" class="nav-link text-xs tracking-widest uppercase opacity-70 hover:opacity-100 transition-opacity">About</a>
+            </nav><!-- Logo -->
+            <div class="flex items-center gap-3">
+                <svg width="32" height="32" viewbox="0 0 40 40" fill="none"><rect x="2" y="2" width="36" height="36" stroke="white" stroke-width="1.5" /> <line x1="8" y1="14" x2="32" y2="14" stroke="white" stroke-width="1.2" /> <line x1="8" y1="20" x2="26" y2="20" stroke="white" stroke-width="1.2" /> <line x1="8" y1="26" x2="20" y2="26" stroke="white" stroke-width="1.2" />
+                </svg><span id="brand-name" class="font-display text-2xl tracking-[0.3em] font-light">NOIR</span>
+            </div>
+            <div class="flex items-center gap-5"><button onclick="toggleCart()" class="relative p-1 hover:opacity-70 transition-opacity"> <i data-lucide="shopping-bag" style="width:20px; height:20px;"></i> <span id="cart-count" class="cart-badge absolute -top-1 -right-2 w-4 h-4 text-[10px] flex items-center justify-center hidden" style="background:#fff; color:#000; border-radius:50%;">0</span> </button> <button class="md:hidden p-1" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')"> <i data-lucide="menu" style="width:20px; height:20px;"></i> </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden px-6 pb-4 space-y-3" style="border-top:1px solid rgba(255,255,255,0.06);"><a href="#collection" class="block text-xs tracking-widest uppercase opacity-70 py-2">Collection</a> <a href="#about" class="block text-xs tracking-widest uppercase opacity-70 py-2">About</a>
+        </div>
+    </header><!-- Hero -->
+    <section class="relative w-full hero-pattern" style="min-height:600px; padding-top:120px; padding-bottom:80px;">
+        <div class="absolute inset-0" style="background:radial-gradient(ellipse at 30% 50%, rgba(40,40,40,0.5) 0%, transparent 70%);"></div>
+        <div class="relative max-w-7xl mx-auto px-6 flex flex-col items-center text-center" style="padding-top:60px;">
+            <p class="anim-fade-up delay-1 text-xs tracking-[0.5em] uppercase opacity-40 mb-6" style="font-family:'Outfit',sans-serif;">Exclusive Drop</p>
+            <h1 id="hero-title" class="anim-fade-up delay-2 font-display font-light tracking-[0.15em] leading-none mb-4" style="font-size:clamp(3rem, 10vw, 8rem);">NEW COLLECTION</h1>
+            <p id="hero-subtitle" class="anim-fade-up delay-3 text-sm tracking-[0.4em] uppercase opacity-50 mb-10" style="font-family:'Outfit',sans-serif;">AUTUMN / WINTER 2025</p><a href="#collection" class="anim-fade-up delay-4 btn-noir inline-block px-12 py-4 text-xs tracking-[0.3em] uppercase" style="background:#fff; color:#000;">Explore Now</a> <!-- Decorative elements -->
+            <div class="anim-fade-in delay-6 mt-16 flex items-center gap-4 opacity-20">
+                <div style="width:60px; height:1px; background:#fff;"></div>
+                <svg width="12" height="12" viewbox="0 0 12 12">
+                    <path d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5Z" fill="white" />
+                </svg>
+                <div style="width:60px; height:1px; background:#fff;"></div>
+            </div>
+        </div>
+    </section><!-- Marquee -->
+    <div class="w-full overflow-hidden py-4" style="background:#0a0a0a; border-top:1px solid #111; border-bottom:1px solid #111;">
+        <div class="marquee-track"><span class="text-xs tracking-[0.5em] uppercase opacity-20 px-8" style="white-space:nowrap;">FREE SHIPPING WORLDWIDE ✦ NEW ARRIVALS WEEKLY ✦ SUSTAINABLE FASHION ✦ HANDCRAFTED WITH CARE ✦ LIMITED EDITIONS ✦ FREE SHIPPING WORLDWIDE ✦ NEW ARRIVALS WEEKLY ✦ SUSTAINABLE FASHION ✦ HANDCRAFTED WITH CARE ✦ LIMITED EDITIONS ✦ </span> <span class="text-xs tracking-[0.5em] uppercase opacity-20 px-8" style="white-space:nowrap;">FREE SHIPPING WORLDWIDE ✦ NEW ARRIVALS WEEKLY ✦ SUSTAINABLE FASHION ✦ HANDCRAFTED WITH CARE ✦ LIMITED EDITIONS ✦ FREE SHIPPING WORLDWIDE ✦ NEW ARRIVALS WEEKLY ✦ SUSTAINABLE FASHION ✦ HANDCRAFTED WITH CARE ✦ LIMITED EDITIONS ✦ </span>
+        </div>
+    </div><!-- Collection -->
+    <section id="collection" class="w-full py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="scroll-reveal text-center mb-14">
+                <p class="text-xs tracking-[0.5em] uppercase opacity-30 mb-3">Curated Selection</p>
+                <h2 class="font-display text-5xl md:text-6xl font-light tracking-wider mb-8">THE EDIT</h2><!-- Filters -->
+                <div class="flex flex-wrap justify-center gap-6 md:gap-10"><button class="filter-btn text-xs tracking-[0.3em] uppercase opacity-60 hover:opacity-100 active" data-filter="all" onclick="filterProducts('all', this)">All</button> <button class="filter-btn text-xs tracking-[0.3em] uppercase opacity-60 hover:opacity-100" data-filter="tops" onclick="filterProducts('tops', this)">Tops</button> <button class="filter-btn text-xs tracking-[0.3em] uppercase opacity-60 hover:opacity-100" data-filter="bottoms" onclick="filterProducts('bottoms', this)">Bottoms</button> <button class="filter-btn text-xs tracking-[0.3em] uppercase opacity-60 hover:opacity-100" data-filter="outerwear" onclick="filterProducts('outerwear', this)">Outerwear</button> <button class="filter-btn text-xs tracking-[0.3em] uppercase opacity-60 hover:opacity-100" data-filter="accessories" onclick="filterProducts('accessories', this)">Accessories</button>
+                </div>
+            </div>
+            <div id="products-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            </div>
+        </div>
+    </section><!-- About -->
+    <section id="about" class="w-full py-24 px-6" style="background:#050505;">
+        <div class="max-w-5xl mx-auto scroll-reveal">
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div>
+                    <p class="text-xs tracking-[0.5em] uppercase opacity-30 mb-4">Est. 2020</p>
+                    <h2 id="about-heading" class="font-display text-4xl md:text-5xl font-light tracking-wider mb-6">OUR PHILOSOPHY</h2>
+                    <div class="about-line mb-8" style="height:1px; background:#fff; opacity:0.3;"></div>
+                    <p id="about-text" class="text-sm leading-relaxed opacity-50 mb-6" style="font-family:'Outfit',sans-serif;">We believe in the power of simplicity. Every piece in our collection is designed to transcend seasons and trends, crafted with meticulous attention to detail using only the finest sustainable materials. Our aesthetic is rooted in the tension between minimalism and bold expression — where black meets white, structure meets flow.</p>
+                    <p class="text-sm leading-relaxed opacity-50" style="font-family:'Outfit',sans-serif;">Each garment tells a story of craftsmanship, from hand-selected fabrics sourced from artisan mills to the precise construction that defines modern elegance.</p>
+                </div>
+                <div class="relative"><!-- Abstract art piece instead of photo -->
+                    <svg viewbox="0 0 400 500" class="w-full" style="max-width:400px; margin:0 auto; display:block;"><rect width="400" height="500" fill="#0a0a0a" /> <rect x="40" y="40" width="160" height="200" fill="#111" stroke="#222" stroke-width="1" /> <rect x="220" y="80" width="140" height="140" fill="#0d0d0d" stroke="#1a1a1a" stroke-width="1" /> <rect x="60" y="280" width="120" height="180" fill="#0f0f0f" stroke="#1a1a1a" stroke-width="1" /> <rect x="200" y="260" width="160" height="120" fill="#111" stroke="#222" stroke-width="1" /> <line x1="0" y1="250" x2="400" y2="250" stroke="#222" stroke-width="0.5" /> <line x1="200" y1="0" x2="200" y2="500" stroke="#222" stroke-width="0.5" /> <circle cx="200" cy="250" r="40" fill="none" stroke="#333" stroke-width="0.5" /> <text x="200" y="490" text-anchor="middle" fill="#333" font-size="10" letter-spacing="8" style="font-family:'Outfit',sans-serif;">
+                        NOIR STUDIO
+                    </text>
+                    </svg>
+                </div>
+            </div><!-- Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mt-20 pt-16" style="border-top:1px solid #111;">
+                <div class="text-center scroll-reveal">
+                    <p class="font-display text-4xl font-light mb-2">50+</p>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-30">Pieces Per Season</p>
+                </div>
+                <div class="text-center scroll-reveal">
+                    <p class="font-display text-4xl font-light mb-2">12</p>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-30">Countries</p>
+                </div>
+                <div class="text-center scroll-reveal">
+                    <p class="font-display text-4xl font-light mb-2">100%</p>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-30">Sustainable</p>
+                </div>
+                <div class="text-center scroll-reveal">
+                    <p class="font-display text-4xl font-light mb-2">5★</p>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-30">Rated</p>
+                </div>
+            </div>
+        </div>
+    </section><!-- Newsletter -->
+    <section class="w-full py-20 px-6" style="background:#000; border-top:1px solid #111; border-bottom:1px solid #111;">
+        <div class="max-w-xl mx-auto text-center scroll-reveal">
+            <h3 class="font-display text-3xl font-light tracking-wider mb-3">STAY IN THE LOOP</h3>
+            <p class="text-xs opacity-40 tracking-wider mb-8">Be the first to know about new drops and exclusive offers.</p>
+            <form onsubmit="event.preventDefault(); showToast('Subscribed successfully!'); this.reset();" class="flex gap-0"><input type="email" placeholder="your@email.com" required class="flex-1 px-5 py-4 text-xs tracking-wider outline-none" style="background:#0a0a0a; border:1px solid #222; color:#fff; font-family:'Outfit',sans-serif;"> <button type="submit" class="btn-noir px-8 py-4 text-xs tracking-widest uppercase" style="background:#fff; color:#000;">Join</button>
+            </form>
+        </div>
+    </section><!-- Footer -->
+    <footer class="w-full py-16 px-6" style="background:#000;">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-4 gap-10 mb-12">
+                <div><span class="font-display text-xl tracking-[0.3em] font-light">NOIR</span>
+                    <p class="text-xs opacity-30 mt-3 leading-relaxed" style="font-family:'Outfit',sans-serif;">Redefining modern fashion through the lens of minimalism.</p>
+                </div>
+                <div>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-4">Shop</p>
+                    <div class="space-y-2"><a href="#collection" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">New Arrivals</a> <a href="#collection" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">Bestsellers</a> <a href="#collection" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">Sale</a>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-4">Company</p>
+                    <div class="space-y-2"><a href="#about" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">About Us</a> <a href="#" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">Sustainability</a> <a href="#" class="block text-xs opacity-50 hover:opacity-100 transition-opacity">Careers</a>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-[10px] tracking-[0.4em] uppercase opacity-40 mb-4">Connect</p>
+                    <div class="flex gap-4"><a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i data-lucide="instagram" style="width:18px;height:18px;"></i></a> <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i data-lucide="twitter" style="width:18px;height:18px;"></i></a> <a href="#" class="opacity-50 hover:opacity-100 transition-opacity"><i data-lucide="facebook" style="width:18px;height:18px;"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div style="border-top:1px solid #111;" class="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p id="footer-text" class="text-[10px] tracking-[0.3em] uppercase opacity-20">© 2025 NOIR. All rights reserved.</p>
+                <div class="flex gap-6"><a href="#" class="text-[10px] tracking-wider uppercase opacity-20 hover:opacity-50 transition-opacity">Privacy</a> <a href="#" class="text-[10px] tracking-wider uppercase opacity-20 hover:opacity-50 transition-opacity">Terms</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+<script>
+    // Product Data
+    const products = [
+        { id:1, name:"Shadow Blazer", price:285, category:"outerwear", tag:"New", pattern:"M20,15 L50,10 L80,15 L80,85 L50,90 L20,85Z" },
+        { id:2, name:"Onyx Silk Top", price:145, category:"tops", tag:"Best", pattern:"M30,20 Q50,5 70,20 L75,80 Q50,90 25,80Z" },
+        { id:3, name:"Midnight Trousers", price:195, category:"bottoms", tag:"", pattern:"M35,10 L45,10 L50,90 L30,90Z M55,10 L65,10 L70,90 L50,90Z" },
+        { id:4, name:"Eclipse Coat", price:420, category:"outerwear", tag:"New", pattern:"M15,10 L85,10 L80,90 L20,90Z M40,10 L40,50 M60,10 L60,50" },
+        { id:5, name:"Phantom Tee", price:89, category:"tops", tag:"", pattern:"M25,25 L75,25 L70,80 L30,80Z M45,25 L45,10 L55,10 L55,25" },
+        { id:6, name:"Void Skirt", price:165, category:"bottoms", tag:"Best", pattern:"M30,20 L70,20 L80,85 L20,85Z" },
+        { id:7, name:"Obsidian Scarf", price:75, category:"accessories", tag:"", pattern:"M20,30 Q50,10 80,30 Q80,50 50,70 Q20,50 20,30Z" },
+        { id:8, name:"Carbon Jacket", price:340, category:"outerwear", tag:"New", pattern:"M20,15 L80,15 L85,85 L15,85Z M50,15 L50,60" },
+        { id:9, name:"Ash Crop Top", price:110, category:"tops", tag:"", pattern:"M30,30 L70,30 L65,70 L35,70Z M42,30 L40,15 L60,15 L58,30" },
+        { id:10, name:"Slate Belt", price:55, category:"accessories", tag:"", pattern:"M10,40 L90,40 L90,60 L10,60Z M48,35 L52,35 L52,65 L48,65Z" },
+        { id:11, name:"Charcoal Dress", price:275, category:"tops", tag:"Best", pattern:"M30,10 L70,10 L75,85 Q50,95 25,85Z" },
+        { id:12, name:"Ink Joggers", price:155, category:"bottoms", tag:"", pattern:"M32,10 L48,10 L52,90 L28,90Z M52,10 L68,10 L72,90 L48,90Z" },
+    ];
+
+    let favorites = new Set();
+    let cart = [];
+    let currentFilter = 'all';
+
+    function renderProducts(filter='all') {
+        const grid = document.getElementById('products-grid');
+        const filtered = filter === 'all' ? products : products.filter(p => p.category === filter);
+        grid.innerHTML = '';
+
+        filtered.forEach((p, i) => {
+            const isFav = favorites.has(p.id);
+            const card = document.createElement('div');
+            card.className = `product-card anim-scale-in delay-${Math.min(i+1, 8)}`;
+            card.dataset.category = p.category;
+            card.innerHTML = `
+      <div class="relative overflow-hidden" style="background:#0a0a0a; aspect-ratio:3/4;">
+        <svg viewBox="0 0 100 100" class="product-img w-full h-full" style="padding:20%;">
+          <rect width="100" height="100" fill="#0a0a0a"/>
+          <path d="${p.pattern}" fill="none" stroke="#333" stroke-width="0.8"/>
+          <path d="${p.pattern}" fill="#111" opacity="0.5"/>
+        </svg>
+        ${p.tag ? `<span class="absolute top-3 left-3 px-3 py-1 text-[9px] tracking-[0.3em] uppercase" style="background:#fff; color:#000;">${p.tag}</span>` : ''}
+        <div class="product-overlay absolute inset-0 flex items-end justify-center pb-4" style="background:linear-gradient(transparent 50%, rgba(0,0,0,0.8));">
+          <button onclick="addToCart(${p.id})" class="btn-noir px-6 py-3 text-[10px] tracking-[0.3em] uppercase" style="background:#fff; color:#000;">Add to Bag</button>
+        </div>
+        <button onclick="toggleFav(${p.id}, this)" class="fav-btn absolute top-3 right-3 p-2 ${isFav ? 'active' : ''}" style="background:rgba(0,0,0,0.5); backdrop-filter:blur(4px);">
+          <i data-lucide="heart" style="width:16px; height:16px;"></i>
+        </button>
+      </div>
+      <div class="mt-3 px-1">
+        <p class="text-xs tracking-wider font-medium">${p.name}</p>
+        <p class="text-xs opacity-40 mt-1 font-display text-lg">$${p.price}</p>
+      </div>
+    `;
+            grid.appendChild(card);
+        });
+        lucide.createIcons();
+    }
+
+    function filterProducts(filter, btn) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderProducts(filter);
+    }
+
+    function toggleFav(id, btn) {
+        if (favorites.has(id)) { favorites.delete(id); btn.classList.remove('active'); }
+        else { favorites.add(id); btn.classList.add('active'); }
+    }
+
+    function addToCart(id) {
+        const p = products.find(x => x.id === id);
+        const existing = cart.find(x => x.id === id);
+        if (existing) existing.qty++;
+        else cart.push({ ...p, qty: 1 });
+        updateCartUI();
+        showToast(`${p.name} added to bag`);
+    }
+
+    function removeFromCart(id) {
+        cart = cart.filter(x => x.id !== id);
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const count = cart.reduce((s, i) => s + i.qty, 0);
+        const badge = document.getElementById('cart-count');
+        badge.textContent = count;
+        badge.classList.toggle('hidden', count === 0);
+
+        const itemsEl = document.getElementById('cart-items');
+        const emptyEl = document.getElementById('cart-empty');
+        const footerEl = document.getElementById('cart-footer');
+
+        if (cart.length === 0) {
+            itemsEl.innerHTML = '';
+            emptyEl.classList.remove('hidden');
+            footerEl.classList.add('hidden');
+            return;
+        }
+        emptyEl.classList.add('hidden');
+        footerEl.classList.remove('hidden');
+
+        itemsEl.innerHTML = cart.map(item => `
+    <div class="flex gap-4 py-3" style="border-bottom:1px solid #151515;">
+      <div style="width:60px; height:75px; background:#0d0d0d; flex-shrink:0;" class="flex items-center justify-center">
+        <svg viewBox="0 0 100 100" style="width:40px; height:40px;"><path d="${item.pattern}" fill="#222" stroke="#333" stroke-width="1"/></svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs tracking-wider truncate">${item.name}</p>
+        <p class="text-xs opacity-40 mt-1">Qty: ${item.qty}</p>
+        <p class="text-sm font-display mt-1">$${item.price * item.qty}</p>
+      </div>
+      <button onclick="removeFromCart(${item.id})" class="self-start p-1 opacity-40 hover:opacity-100 transition-opacity">
+        <i data-lucide="x" style="width:14px;height:14px;"></i>
+      </button>
+    </div>
+  `).join('');
+
+        document.getElementById('cart-total').textContent = '$' + cart.reduce((s, i) => s + i.price * i.qty, 0);
+        lucide.createIcons();
+    }
+
+    function toggleCart() {
+        const sidebar = document.getElementById('cart-sidebar');
+        const overlay = document.getElementById('cart-overlay');
+        const isOpen = sidebar.style.transform === 'translateX(0%)';
+        sidebar.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
+        overlay.classList.toggle('hidden', isOpen);
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Scroll reveal
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+            if (e.isIntersecting) {
+                e.target.classList.add('visible');
+                // Trigger about line animation
+                const line = e.target.querySelector('.about-line');
+                if (line) line.classList.add('visible');
+            }
+        });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+    // Init
+    renderProducts();
+    lucide.createIcons();
+
+    // Element SDK
+    const defaultConfig = {
+        brand_name: "NOIR",
+        hero_title: "NEW COLLECTION",
+        hero_subtitle: "AUTUMN / WINTER 2025",
+        about_heading: "OUR PHILOSOPHY",
+        about_text: "We believe in the power of simplicity. Every piece in our collection is designed to transcend seasons and trends, crafted with meticulous attention to detail using only the finest sustainable materials. Our aesthetic is rooted in the tension between black and white, structure and flow.",
+        footer_text: "© 2025 NOIR. All rights reserved.",
+        background_color: "#000000",
+        surface_color: "#0a0a0a",
+        text_color: "#ffffff",
+        primary_action_color: "#ffffff",
+        secondary_action_color: "#333333",
+        font_family: "Cormorant Garamond",
+        font_size: 16
+    };
+
+    async function onConfigChange(config) {
+        document.getElementById('brand-name').textContent = config.brand_name || defaultConfig.brand_name;
+        document.getElementById('hero-title').textContent = config.hero_title || defaultConfig.hero_title;
+        document.getElementById('hero-subtitle').textContent = config.hero_subtitle || defaultConfig.hero_subtitle;
+        document.getElementById('about-heading').textContent = config.about_heading || defaultConfig.about_heading;
+        document.getElementById('about-text').textContent = config.about_text || defaultConfig.about_text;
+        document.getElementById('footer-text').textContent = config.footer_text || defaultConfig.footer_text;
+
+        const bg = config.background_color || defaultConfig.background_color;
+        const surface = config.surface_color || defaultConfig.surface_color;
+        const text = config.text_color || defaultConfig.text_color;
+        const primary = config.primary_action_color || defaultConfig.primary_action_color;
+        const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+
+        const wrapper = document.getElementById('app-wrapper');
+        wrapper.style.background = bg;
+        wrapper.style.color = text;
+
+        document.querySelectorAll('.btn-noir').forEach(b => { b.style.background = primary; b.style.color = bg; });
+        document.getElementById('cart-count').style.background = primary;
+        document.getElementById('cart-count').style.color = bg;
+        document.querySelectorAll('[style*="border"]').forEach(el => {
+            if (el.style.borderColor) el.style.borderColor = secondary;
+        });
+
+        const font = config.font_family || defaultConfig.font_family;
+        const baseSize = config.font_size || defaultConfig.font_size;
+        document.querySelectorAll('.font-display').forEach(el => { el.style.fontFamily = `${font}, serif`; });
+        document.getElementById('hero-title').style.fontFamily = `${font}, serif`;
+        document.getElementById('about-heading').style.fontFamily = `${font}, serif`;
+        document.getElementById('about-heading').style.fontSize = `${baseSize * 2.5}px`;
+        document.getElementById('about-text').style.fontSize = `${baseSize * 0.85}px`;
+    }
+
+    function mapToCapabilities(config) {
+        function makeColor(key) {
+            return {
+                get: () => config[key] || defaultConfig[key],
+                set: (v) => { config[key] = v; window.elementSdk.setConfig({ [key]: v }); }
+            };
+        }
+        return {
+            recolorables: [
+                makeColor('background_color'),
+                makeColor('surface_color'),
+                makeColor('text_color'),
+                makeColor('primary_action_color'),
+                makeColor('secondary_action_color')
+            ],
+            borderables: [],
+            fontEditable: {
+                get: () => config.font_family || defaultConfig.font_family,
+                set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+            },
+            fontSizeable: {
+                get: () => config.font_size || defaultConfig.font_size,
+                set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+            }
+        };
+    }
+
+    function mapToEditPanelValues(config) {
+        return new Map([
+            ["brand_name", config.brand_name || defaultConfig.brand_name],
+            ["hero_title", config.hero_title || defaultConfig.hero_title],
+            ["hero_subtitle", config.hero_subtitle || defaultConfig.hero_subtitle],
+            ["about_heading", config.about_heading || defaultConfig.about_heading],
+            ["about_text", config.about_text || defaultConfig.about_text],
+            ["footer_text", config.footer_text || defaultConfig.footer_text]
+        ]);
+    }
+
+    if (window.elementSdk) {
+        window.elementSdk.init({ defaultConfig, onConfigChange, mapToCapabilities, mapToEditPanelValues });
+    }
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eedf81802745daf',t:'MTc3NjYyMzMwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

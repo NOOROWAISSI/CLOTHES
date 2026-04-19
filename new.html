@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMOISELLE - أحدث المنتجات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root{
+            --black:#000000;--gray1:#1e1e1e;--gray2:#2a2a2a;--gray3:#3d3d3d;
+            --gray4:#555555;--gray5:#777777;--gray6:#999999;--gray7:#bbbbbb;
+            --light:#f0f0f0;--lighter:#f8f8f8;--white:#ffffff;--red:#ca192c;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Tajawal',sans-serif;background:var(--white);color:var(--black);}
+
+        .lang-switcher{background:var(--black);display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:5px 60px;font-size:11px;}
+        .lang-btn{padding:4px 12px;border:1px solid transparent;border-radius:2px;cursor:pointer;font-weight:700;color:var(--gray5);transition:all .2s;background:none;}
+        .lang-btn:hover{color:var(--white);}
+        .lang-btn.active{background:linear-gradient(135deg,var(--gray2),var(--gray1));color:var(--white);}
+        .lang-sep{color:var(--gray4);}
+
+        .offer-bar{background:var(--black);color:var(--gray7);text-align:center;padding:9px 20px;font-size:12px;font-weight:500;letter-spacing:.5px;border-bottom:1px solid var(--gray2);}
+
+        .header{background:var(--white);border-bottom:1px solid var(--gray6);padding:0 30px;height:68px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+        .header-logo{position:absolute;left:50%;transform:translateX(-50%);}
+        .header-logo img{height:52px;width:auto;}
+        .header-right,.header-left{display:flex;align-items:center;gap:10px;}
+        .hamburger-btn{display:flex;flex-direction:column;justify-content:center;gap:5px;width:40px;height:40px;background:none;border:none;cursor:pointer;padding:8px 6px;}
+        .hamburger-btn span{display:block;height:2px;background:var(--black);border-radius:2px;}
+
+        .nav-drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400;opacity:0;pointer-events:none;transition:opacity .3s;}
+        .nav-drawer-overlay.open{opacity:1;pointer-events:all;}
+        .nav-drawer{position:fixed;top:0;right:0;height:100vh;width:280px;background:var(--white);z-index:401;transform:translateX(110%);transition:transform .35s cubic-bezier(.4,0,.2,1);box-shadow:-6px 0 32px rgba(0,0,0,0.14);display:flex;flex-direction:column;overflow:hidden;visibility:hidden;}
+        .nav-drawer.open{transform:translateX(0);visibility:visible;}
+        .nav-drawer-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--light);}
+        .nav-drawer-head img{height:40px;}
+        .nav-drawer-close{background:none;border:none;cursor:pointer;font-size:26px;color:var(--gray5);line-height:1;padding:2px 8px;border-radius:4px;transition:all .2s;}
+        .nav-drawer-close:hover{color:var(--black);background:var(--lighter);}
+        .nav-drawer-links{padding:16px 0;flex:1;overflow-y:auto;}
+        .nav-drawer-links a{display:block;padding:14px 24px;font-size:15px;font-weight:500;color:var(--gray3);text-decoration:none;border-bottom:1px solid var(--lighter);transition:all .2s;}
+        .nav-drawer-links a:hover{background:var(--lighter);color:var(--black);padding-right:32px;}
+
+        .h-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid var(--gray5);border-radius:4px;font-size:12.5px;font-weight:600;color:var(--gray4);cursor:pointer;transition:all .2s;background:var(--white);}
+        .h-btn:hover{background:var(--lighter);border-color:var(--gray3);color:var(--black);}
+        .cart-badge{background:var(--black);color:var(--white);font-size:10px;font-weight:700;padding:2px 6px;border-radius:50%;}
+
+        .breadcrumb{padding:14px 60px;font-size:13px;color:var(--gray5);background:var(--lighter);border-bottom:1px solid var(--gray6);}
+        .collection-header{text-align:center;padding:30px 60px 20px;}
+        .collection-title{font-family:'Playfair Display',serif;font-size:29px;letter-spacing:3px;margin-bottom:12px;}
+        .collection-hint{max-width:460px;margin:0 auto;font-size:11.5px;color:var(--gray5);background:rgba(255,255,224,0.4);border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 16px;line-height:1.6;}
+
+        .toolbar{display:flex;align-items:center;justify-content:space-between;padding:16px 60px;border-bottom:1px solid var(--gray6);background:var(--white);flex-wrap:wrap;gap:12px;}
+        .product-count{font-size:14px;color:var(--gray5);}
+        .sort-wrap{display:flex;align-items:center;gap:8px;font-size:13.5px;}
+        .sort-wrap label{color:var(--gray5);}
+        .sort-select{padding:8px 12px;border:1.5px solid var(--gray5);border-radius:4px;background:var(--white);font-size:13.5px;font-family:'Tajawal',sans-serif;}
+        .filter-toggle-btn{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--black);color:var(--white);border:none;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Tajawal',sans-serif;transition:background .2s;}
+        .filter-toggle-btn:hover{background:var(--gray2);}
+        .filter-active-badge{background:var(--red);color:white;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:2px;display:none;}
+
+        .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:300;opacity:0;pointer-events:none;transition:opacity .3s;}
+        .drawer-overlay.open{opacity:1;pointer-events:all;}
+        .filter-drawer{position:fixed;top:0;right:0;height:100vh;width:300px;background:var(--white);z-index:301;transform:translateX(110%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;box-shadow:-6px 0 32px rgba(0,0,0,0.14);display:flex;flex-direction:column;}
+        .filter-drawer.open{transform:translateX(0);}
+        .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--light);position:sticky;top:0;background:var(--white);z-index:1;}
+        .drawer-head h3{font-size:15px;font-weight:700;}
+        .drawer-close-btn{background:none;border:none;cursor:pointer;font-size:24px;color:var(--gray5);line-height:1;padding:2px 8px;border-radius:4px;transition:all .2s;}
+        .drawer-close-btn:hover{color:var(--black);background:var(--lighter);}
+        .drawer-body{padding:22px;flex:1;}
+        .sidebar-section{margin-bottom:28px;}
+        .sidebar-section-title{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray4);margin-bottom:13px;padding-bottom:9px;border-bottom:1px solid var(--light);}
+        .color-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+        .filter-check{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;padding:4px 0;}
+        .filter-check input{width:15px;height:15px;accent-color:var(--black);}
+        .size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+        .size-btn{border:1px solid var(--gray6);padding:9px 4px;text-align:center;font-size:12.5px;cursor:pointer;border-radius:4px;transition:all .2s;font-family:'Tajawal',sans-serif;}
+        .size-btn:hover{border-color:var(--gray3);}
+        .size-btn.active{background:var(--black);color:white;border-color:var(--black);}
+        .price-range-container{padding:6px 0;}
+        .price-values{display:flex;justify-content:space-between;font-size:13px;color:var(--gray5);margin-bottom:10px;}
+        input[type="range"]{width:100%;margin:5px 0;accent-color:var(--black);}
+        .drawer-footer{padding:18px 22px;border-top:1px solid var(--light);background:var(--white);position:sticky;bottom:0;display:flex;flex-direction:column;gap:10px;}
+        .apply-btn{width:100%;padding:13px;background:var(--black);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:700;font-family:'Tajawal',sans-serif;font-size:14px;transition:background .2s;}
+        .apply-btn:hover{background:var(--gray2);}
+        .clear-filters-btn{background:none;border:none;color:var(--gray5);text-decoration:underline;cursor:pointer;font-size:13px;font-family:'Tajawal',sans-serif;text-align:center;}
+        .clear-filters-btn:hover{color:var(--black);}
+
+        .products-main{padding:28px 60px;}
+        .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:26px;}
+
+        .product-card{
+            background:var(--white);
+            border-radius:8px;
+            overflow:hidden;
+            box-shadow:0 4px 15px rgba(0,0,0,0.08);
+            cursor:pointer;
+            opacity:0;
+            transform:translateY(45px);
+            transition:opacity .6s ease, transform .6s ease, box-shadow .3s;
+            position: relative;
+        }
+        .product-card.visible{
+            opacity:1;
+            transform:translateY(0);
+        }
+        .product-card:hover{
+            transform:translateY(-8px);
+            box-shadow:0 18px 38px rgba(0,0,0,0.14);
+        }
+
+        .product-img-wrap{position:relative;aspect-ratio:3/4;overflow:hidden;background:var(--lighter);border:7px solid var(--black);}
+
+        /* اللوجو */
+        .logo-badge{
+            position:absolute;
+            top:12px;
+            right:12px;
+            width:58px;
+            height:58px;
+            z-index:6;
+            background: transparent;
+        }
+        .logo-badge img{
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+            filter: drop-shadow(0 3px 8px rgba(0,0,0,0.3));
+        }
+
+        /* زر أضف إلى السلة على الصورة */
+        .add-to-cart-overlay{
+            position:absolute;
+            bottom:0;
+            left:0;
+            right:0;
+            background:linear-gradient(transparent, rgba(0,0,0,0.9));
+            padding:25px 15px 15px;
+            opacity:0;
+            transition:all .3s ease;
+            display:flex;
+            justify-content:center;
+        }
+        .product-card:hover .add-to-cart-overlay{
+            opacity:1;
+        }
+        .add-to-cart-btn{
+            background:var(--black);
+            color:white;
+            border:none;
+            padding:12px 28px;
+            border-radius:6px;
+            font-weight:600;
+            font-size:14.5px;
+            cursor:pointer;
+            width:92%;
+            transition:all .3s;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+        }
+        .add-to-cart-btn:hover{
+            background:var(--red);
+            transform:scale(1.06);
+        }
+
+        .wishlist-btn{position:absolute;top:12px;left:12px;z-index:7;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.92);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--gray5);transition:all .25s;box-shadow:0 2px 8px rgba(0,0,0,0.15);}
+        .wishlist-btn:hover{transform:scale(1.12);color:var(--red);}
+        .wishlist-btn.active{color:var(--red);}
+
+        .product-info{padding:14px 16px;text-align:center;}
+        .product-name{font-size:15px;font-weight:500;margin-bottom:8px;}
+        .price-sale{font-size:17px;font-weight:700;color:var(--red);}
+        .price-old{font-size:13px;color:var(--gray5);text-decoration:line-through;margin-top:2px;}
+
+        .swatches-row{display:flex;justify-content:center;gap:7px;padding:10px 0 4px;}
+        .swatch-circle{width:24px;height:24px;border-radius:50%;border:2px solid #ddd;cursor:pointer;transition:all .2s;}
+        .swatch-circle:hover{border-color:var(--black);transform:scale(1.15);}
+        .swatch-circle.active{border:3px solid var(--black);transform:scale(1.15);}
+
+        .empty-state{text-align:center;padding:70px 20px;color:var(--gray5);grid-column:1/-1;}
+        .empty-state .icon{font-size:48px;margin-bottom:16px;opacity:.4;}
+
+        @media(max-width:768px){
+            .header{padding:0 16px;}
+            .toolbar,.products-main,.breadcrumb{padding-right:16px;padding-left:16px;}
+            .collection-header{padding:20px 16px 14px;}
+            .collection-title{font-size:22px;}
+            .filter-drawer{width:88vw;max-width:320px;}
+            .lang-switcher{padding:5px 16px;}
+            .add-to-cart-overlay{opacity:1; background:rgba(0,0,0,0.8);}
+        }
+    </style>
+</head>
+<body>
+
+<div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('ar')">العربية</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('en')">English</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('he')">עברית</button>
+</div>
+
+<div class="offer-bar">🚚 اطلبي بـ 500₪ واحصلي على توصيل مجاني للضفة الغربية &nbsp;|&nbsp; القدس 10₪ &nbsp;|&nbsp; الداخل 30₪</div>
+
+<header class="header">
+    <div class="header-right">
+        <button class="hamburger-btn" onclick="toggleNavDrawer()"><span></span><span></span><span></span></button>
+        <div class="h-btn"><i class="fa-solid fa-magnifying-glass"></i><span data-ar="بحث" data-en="Search" data-he="חיפוש">بحث</span></div>
+    </div>
+    <a href="/" class="header-logo"><img src="pic/logo .jpeg" alt="DEMOISELLE"></a>
+    <div class="header-left">
+        <div class="h-btn" style="position:relative"><i class="fa-regular fa-heart"></i><span data-ar="المفضلة" data-en="Wishlist" data-he="מועדפים">المفضلة</span><span class="cart-badge" id="wishlistBadge" style="display:none">0</span></div>
+        <div class="h-btn"><i class="fa-solid fa-user"></i><span data-ar="حسابي" data-en="My Account" data-he="החשבון שלי">حسابي</span></div>
+        <div class="h-btn" style="position:relative"><i class="fa-solid fa-cart-shopping"></i><span class="cart-badge" id="cartBadge">0</span></div>
+    </div>
+</header>
+
+<div class="nav-drawer-overlay" id="navDrawerOverlay" onclick="toggleNavDrawer()"></div>
+<div class="nav-drawer" id="navDrawer">
+    <div class="nav-drawer-head">
+        <img src="pic/logo .jpeg" alt="DEMOISELLE">
+        <button class="nav-drawer-close" onclick="toggleNavDrawer()">&#215;</button>
+    </div>
+    <div class="nav-drawer-links">
+        <a href="#" data-ar="بدلات" data-en="Suits" data-he="חליפות">بدلات</a>
+        <a href="#" data-ar="فساتين" data-en="Dresses" data-he="שמלות">فساتين</a>
+        <a href="#" data-ar="طقم قطعتين" data-en="Two-Piece Sets" data-he="סט דו-חלקי">طقم قطعتين</a>
+        <a href="#" data-ar="جاكيت" data-en="Jackets" data-he="ז'קטים">جاكيت</a>
+        <a href="#" data-ar="جينز" data-en="Jeans" data-he="ג'ינס">جينز</a>
+        <a href="#" data-ar="تنانير" data-en="Skirts" data-he="חצאיות">تنانير</a>
+        <a href="#" data-ar="بليزر" data-en="Blazers" data-he="בלייזרים">بليزر</a>
+        <a href="#" data-ar="عبايات" data-en="Abayas" data-he="עבאיות">عبايات</a>
+    </div>
+</div>
+
+<nav class="breadcrumb">الرئيسية / أحدث المنتجات</nav>
+
+<div class="collection-header">
+    <h1 class="collection-title" id="collectionTitle">أحدث المنتجات</h1>
+    <div class="collection-hint">استخدمي الفلتر للتسوق حسب <strong>القسم</strong>، <strong>اللون</strong>، <strong>المقاس</strong></div>
+</div>
+
+<div class="toolbar">
+    <div style="display:flex;align-items:center;gap:14px;">
+        <button class="filter-toggle-btn" onclick="toggleDrawer()">
+            <i class="fa-solid fa-sliders"></i>
+            <span data-ar="فلتر" data-en="Filter" data-he="סינון">فلتر</span>
+            <span class="filter-active-badge" id="filterBadge">0</span>
+        </button>
+        <span class="product-count" id="productCount">عرض 20 منتج</span>
+    </div>
+    <div class="sort-wrap">
+        <label data-ar="ترتيب:" data-en="Sort:" data-he="מיון:">ترتيب:</label>
+        <select class="sort-select" id="sortSelect" onchange="applySort()">
+            <option value="newest" data-ar="الأحدث" data-en="Newest" data-he="החדש ביותר">الأحدث</option>
+            <option value="price_asc" data-ar="السعر: الأقل" data-en="Price: Low" data-he="מחיר: נמוך">السعر: الأقل</option>
+            <option value="price_desc" data-ar="السعر: الأعلى" data-en="Price: High" data-he="מחיר: גבוה">السعر: الأعلى</option>
+        </select>
+    </div>
+</div>
+
+<main class="products-main">
+    <div class="products-grid" id="productsGrid"></div>
+</main>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="toggleDrawer()"></div>
+<div class="filter-drawer" id="filterDrawer">
+    <div class="drawer-head">
+        <h3 data-ar="تصفية المنتجات" data-en="Filter Products" data-he="סינון מוצרים">تصفية المنتجات</h3>
+        <button class="drawer-close-btn" onclick="toggleDrawer()">&#215;</button>
+    </div>
+    <div class="drawer-body">
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="اللون" data-en="Color" data-he="צבע">اللون</div>
+            <div class="color-grid">
+                <label class="filter-check"><input type="checkbox" value="White" onchange="applyFilters()"><span data-ar="أبيض" data-en="White" data-he="לבן">أبيض</span></label>
+                <label class="filter-check"><input type="checkbox" value="Black" onchange="applyFilters()"><span data-ar="أسود" data-en="Black" data-he="שחור">أسود</span></label>
+                <label class="filter-check"><input type="checkbox" value="Blue" onchange="applyFilters()"><span data-ar="أزرق" data-en="Blue" data-he="כחול">أزرق</span></label>
+                <label class="filter-check"><input type="checkbox" value="Red" onchange="applyFilters()"><span data-ar="أحمر" data-en="Red" data-he="אדום">أحمر</span></label>
+                <label class="filter-check"><input type="checkbox" value="Grey" onchange="applyFilters()"><span data-ar="رمادي" data-en="Grey" data-he="אפור">رمادي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Yellow" onchange="applyFilters()"><span data-ar="أصفر" data-en="Yellow" data-he="צהוב">أصفر</span></label>
+                <label class="filter-check"><input type="checkbox" value="Pink" onchange="applyFilters()"><span data-ar="وردي" data-en="Pink" data-he="ורוד">وردي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Beige" onchange="applyFilters()"><span data-ar="بيج" data-en="Beige" data-he="בז'">بيج</span></label>
+                <label class="filter-check"><input type="checkbox" value="Brown" onchange="applyFilters()"><span data-ar="بني" data-en="Brown" data-he="חום">بني</span></label>
+                <label class="filter-check"><input type="checkbox" value="Burgundy" onchange="applyFilters()"><span data-ar="نبيذي" data-en="Burgundy" data-he="בורגונדי">نبيذي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Camel" onchange="applyFilters()"><span data-ar="كاميل" data-en="Camel" data-he="קמל">كاميل</span></label>
+                <label class="filter-check"><input type="checkbox" value="Denim" onchange="applyFilters()"><span data-ar="دنيم" data-en="Denim" data-he="דנים">دنيم</span></label>
+                <label class="filter-check"><input type="checkbox" value="Navy" onchange="applyFilters()"><span data-ar="نيفي" data-en="Navy" data-he="כחול כהה">נيفי</span></label>
+                <label class="filter-check"><input type="checkbox" value="Off White" onchange="applyFilters()"><span data-ar="أوف وايت" data-en="Off White" data-he="לבן שמנת">אוף ווייט</span></label>
+            </div>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="المقاس" data-en="Size" data-he="מידה">المقاس</div>
+            <div class="size-grid">
+                <div class="size-btn" onclick="toggleSize(this)">XS</div>
+                <div class="size-btn" onclick="toggleSize(this)">S</div>
+                <div class="size-btn" onclick="toggleSize(this)">M</div>
+                <div class="size-btn" onclick="toggleSize(this)">L</div>
+                <div class="size-btn" onclick="toggleSize(this)">XL</div>
+                <div class="size-btn" onclick="toggleSize(this)">36</div>
+                <div class="size-btn" onclick="toggleSize(this)">38</div>
+                <div class="size-btn" onclick="toggleSize(this)">40</div>
+            </div>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="السعر (₪)" data-en="Price (₪)" data-he="מחיר (₪)">السعر (₪)</div>
+            <div class="price-range-container">
+                <div class="price-values"><span id="priceMinDisplay">0</span><span id="priceMaxDisplay">1500</span></div>
+                <input type="range" id="priceRangeMin" min="0" max="1500" value="0" step="10" oninput="updatePriceDisplay();applyFilters()">
+                <input type="range" id="priceRangeMax" min="0" max="1500" value="1500" step="10" oninput="updatePriceDisplay();applyFilters()">
+            </div>
+        </div>
+    </div>
+    <div class="drawer-footer">
+        <button class="apply-btn" onclick="applyFilters();toggleDrawer()" data-ar="عرض النتائج" data-en="Show Results" data-he="הצג תוצאות">عرض النتائج</button>
+        <button class="clear-filters-btn" onclick="clearAllFilters()" data-ar="مسح كل الفلاتر" data-en="Clear All" data-he="נקה הכל">مسح كل الفلاتر</button>
+    </div>
+</div>
+
+<script>
+    let currentLang = 'ar';
+    let cart = [];
+    const wishlist = new Set();
+    const carouselState = {};
+    const carouselTimers = {};
+    const AUTO_MS = 2500;
+
+    const products = [
+        { id:1,  name_ar:"عباية كريب فاخرة",       name_en:"Luxury Crepe Abaya",         name_he:"עבאיה קרפ יוקרתית",       price:349, old:449, colors:["Black","Beige"],
+            colorImgs:{ Black:["https://images.unsplash.com/photo-1609505848912-b7c3b8b4beda?w=600&q=80","https://images.unsplash.com/photo-1594938298603-c8148c4b4e7d?w=600&q=80"], Beige:["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80"] }},
+        { id:2,  name_ar:"فستان عباية بيج",         name_en:"Elegant Beige Abaya",        name_he:"שמלת עבאיה בז'",           price:289, old:379, colors:["Beige","Off White"],
+            colorImgs:{ Beige:["https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80"], "Off White":["https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80"] }},
+        { id:3,  name_ar:"عباية مطرزة رمادي",       name_en:"Embroidered Grey Abaya",     name_he:"עבאיה רקומה אפור",         price:399, old:499, colors:["Grey","Black"],
+            colorImgs:{ Grey:["https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=600&q=80"], Black:["https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80"] }},
+        { id:4,  name_ar:"عباية نيدة سوداء",        name_en:"Classic Black Abaya",        name_he:"עבאיה שחורה קלאסית",       price:259, old:329, colors:["Black","Navy"],
+            colorImgs:{ Black:["https://images.unsplash.com/photo-1571513722275-4b41940f54b8?w=600&q=80"], Navy:["https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80"] }},
+        { id:5,  name_ar:"فستان وردي",              name_en:"Pink Abaya Gown",            name_he:"שמלה ורודה",               price:319, old:399, colors:["Pink","Burgundy"],
+            colorImgs:{ Pink:["https://images.unsplash.com/photo-1518895312237-a9e23508077d?w=600&q=80"], Burgundy:["https://images.unsplash.com/photo-1517705008128-361805f42e86?w=600&q=80"] }},
+        { id:6,  name_ar:"عباية كاميل",             name_en:"Camel Abaya",                name_he:"עבאיה קמל",                 price:279, old:359, colors:["Camel","Brown"],
+            colorImgs:{ Camel:["https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?w=600&q=80"], Brown:["https://images.unsplash.com/photo-1521577352947-9bb58764b69a?w=600&q=80"] }},
+        { id:7,  name_ar:"عباية نبيذي فاخرة",       name_en:"Burgundy Luxury Abaya",      name_he:"עבאיה בורגונדי יוקרתית",   price:429, old:529, colors:["Burgundy","Grey"],
+            colorImgs:{ Burgundy:["https://images.unsplash.com/photo-1585914924626-15adac1e6402?w=600&q=80"], Grey:["https://images.unsplash.com/photo-1594938298603-c8148c4b4e7d?w=600&q=80"] }},
+        { id:8,  name_ar:"عباية أوف وايت",          name_en:"Off-White Abaya",            name_he:"עבאיה לבנה",                price:369, old:459, colors:["Off White","Beige"],
+            colorImgs:{ "Off White":["https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80"], Beige:["https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80"] }},
+        { id:9,  name_ar:"بدلة رسمية سوداء",        name_en:"Formal Black Suit",          name_he:"חליפה שחורה רשמית",        price:520, old:650, colors:["Black","Grey"],
+            colorImgs:{ Black:["https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80"], Grey:["https://images.unsplash.com/photo-1550246140-29f40b909e5a?w=600&q=80"] }},
+        { id:10, name_ar:"فستان سهرة أحمر",         name_en:"Red Evening Gown",           name_he:"שמלת ערב אדומה",            price:480, old:580, colors:["Red","Burgundy"],
+            colorImgs:{ Red:["https://images.unsplash.com/photo-1518611012118-696072aa579a?w=600&q=80"], Burgundy:["https://images.unsplash.com/photo-1517705008128-361805f42e86?w=600&q=80"] }},
+        { id:11, name_ar:"طقم بليزر نيفي",          name_en:"Navy Blazer Set",            name_he:"סט בלייזר כחול כהה",       price:395, old:480, colors:["Navy","Black"],
+            colorImgs:{ Navy:["https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=600&q=80"], Black:["https://images.unsplash.com/photo-1566206091558-7f218b696731?w=600&q=80"] }},
+        { id:12, name_ar:"فستان صيفي أصفر",         name_en:"Yellow Summer Dress",        name_he:"שמלת קיץ צהובה",           price:199, old:259, colors:["Yellow","Beige"],
+            colorImgs:{ Yellow:["https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80"], Beige:["https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&q=80"] }},
+        { id:13, name_ar:"جاكيت جلد أسود",          name_en:"Black Leather Jacket",       name_he:"ג'קט עור שחור",             price:650, old:799, colors:["Black","Brown"],
+            colorImgs:{ Black:["https://images.unsplash.com/photo-1502716119720-b23a93e5fe1b?w=600&q=80"], Brown:["https://images.unsplash.com/photo-1604644401890-0bd678c83788?w=600&q=80"] }},
+        { id:14, name_ar:"تنورة دنيم",               name_en:"Denim Skirt",                name_he:"חצאית ג'ינס",               price:175, old:220, colors:["Denim","Black"],
+            colorImgs:{ Denim:["https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=600&q=80"], Black:["https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80"] }},
+        { id:15, name_ar:"عباية فضفاضة بيضاء",     name_en:"Loose White Abaya",          name_he:"עבאיה רפויה לבנה",         price:299, old:369, colors:["White","Off White"],
+            colorImgs:{ White:["https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&q=80"], "Off White":["https://images.unsplash.com/photo-1496747611176-843222e1e57c?w=600&q=80"] }},
+        { id:16, name_ar:"طقم بني كاجوال",          name_en:"Brown Casual Set",           name_he:"סט חום קז'ואל",             price:340, old:420, colors:["Brown","Camel"],
+            colorImgs:{ Brown:["https://images.unsplash.com/photo-1551721434-8b94ddff0e6d?w=600&q=80"], Camel:["https://images.unsplash.com/photo-1604644401890-0bd678c83788?w=600&q=80"] }},
+        { id:17, name_ar:"فستان وردي باستيل",       name_en:"Pastel Pink Dress",          name_he:"שמלה ורוד פסטל",           price:265, old:330, colors:["Pink","White"],
+            colorImgs:{ Pink:["https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&q=80"], White:["https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&q=80"] }},
+        { id:18, name_ar:"بليزر رمادي أنيق",        name_en:"Elegant Grey Blazer",        name_he:"בלייזר אפור אלגנטי",       price:445, old:540, colors:["Grey","Black"],
+            colorImgs:{ Grey:["https://images.unsplash.com/photo-1543132220-3ec99c6094dc?w=600&q=80"], Black:["https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=600&q=80"] }},
+        { id:19, name_ar:"عباية حرير نيفي",         name_en:"Navy Silk Abaya",            name_he:"עבאיה משי כחול כהה",       price:499, old:599, colors:["Navy","Denim"],
+            colorImgs:{ Navy:["https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&q=80"], Denim:["https://images.unsplash.com/photo-1561069934-eee225952461?w=600&q=80"] }},
+        { id:20, name_ar:"فستان بني دافئ",          name_en:"Warm Brown Dress",           name_he:"שמלה חומה חמה",            price:310, old:389, colors:["Brown","Burgundy"],
+            colorImgs:{ Brown:["https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&q=80"], Burgundy:["https://images.unsplash.com/photo-1485230895905-ec40ba36b9bc?w=600&q=80"] }}
+    ];
+
+    let filteredProducts = [...products];
+
+    function addToCart(id) {
+        event.stopPropagation();
+        if (!cart.includes(id)) {
+            cart.push(id);
+            document.getElementById('cartBadge').textContent = cart.length;
+        }
+        const msg = currentLang === 'en' ? 'Added to cart successfully!' :
+            currentLang === 'he' ? 'המוצר נוסף לסל בהצלחה!' : 'تم إضافة المنتج إلى السلة بنجاح!';
+        alert(msg);
+    }
+
+    function startCarousel(id) {
+        stopCarousel(id);
+        const p = products.find(x => x.id === id);
+        const st = carouselState[id];
+        if (!p || !st || (p.colorImgs[st.color]||[]).length < 2) return;
+        carouselTimers[id] = setInterval(() => {
+            const imgs = p.colorImgs[st.color] || [];
+            carouselState[id].slide = (carouselState[id].slide + 1) % imgs.length;
+            showSlide(id, carouselState[id].slide);
+        }, AUTO_MS);
+    }
+
+    function stopCarousel(id) {
+        clearInterval(carouselTimers[id]);
+        delete carouselTimers[id];
+    }
+
+    function showSlide(id, idx) {
+        const wrap = document.getElementById('imgwrap-' + id);
+        if (!wrap) return;
+        wrap.querySelectorAll('.carousel-slide').forEach((s,i) => s.classList.toggle('active', i === idx));
+        wrap.querySelectorAll('.carousel-dot').forEach((d,i) => d.classList.toggle('active', i === idx));
+    }
+
+    function dotClick(id, idx) {
+        stopCarousel(id);
+        showSlide(id, idx);
+        startCarousel(id);
+    }
+
+    function switchColor(el, id, color) {
+        document.getElementById('card-' + id).querySelectorAll('.swatch-circle').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        const p = products.find(x => x.id === id);
+        if (!p || !p.colorImgs[color]) return;
+        const imgs = p.colorImgs[color];
+        carouselState[id] = { color, slide: 0 };
+        const wrap = document.getElementById('imgwrap-' + id);
+        wrap.innerHTML = imgs.map((src,i) => `<img class="carousel-slide${i===0?' active':''}" src="${src}" alt="" loading="lazy">`).join('') +
+            (imgs.length > 1 ? `<div class="carousel-dots">${imgs.map((_,i) => `<button class="carousel-dot${i===0?' active':''}" onclick="dotClick(${id},${i})"></button>`).join('')}</div>` : '');
+        stopCarousel(id);
+        startCarousel(id);
+    }
+
+    function toggleWishlist(btn, id) {
+        event.stopPropagation();
+        wishlist.has(id) ? wishlist.delete(id) : wishlist.add(id);
+        const isActive = wishlist.has(id);
+        btn.classList.toggle('active', isActive);
+        btn.innerHTML = `<i class="fa-${isActive ? 'solid' : 'regular'} fa-heart"></i>`;
+        const badge = document.getElementById('wishlistBadge');
+        badge.textContent = wishlist.size;
+        badge.style.display = wishlist.size ? 'inline' : 'none';
+    }
+
+    let revealObserver = null;
+
+    function setupObserver() {
+        if (revealObserver) revealObserver.disconnect();
+        revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const card = entry.target;
+                    setTimeout(() => {
+                        card.classList.add('visible');
+                        startCarousel(+card.dataset.id);
+                    }, +card.dataset.delay || 0);
+                    revealObserver.unobserve(card);
+                }
+            });
+        }, { threshold: 0.15 });
+    }
+
+    function renderProducts(list) {
+        Object.keys(carouselTimers).forEach(id => stopCarousel(+id));
+
+        const grid = document.getElementById('productsGrid');
+        const countEl = document.getElementById('productCount');
+
+        if (list.length === 0) {
+            grid.innerHTML = '<div class="empty-state"><div class="icon">🔍</div><p>لا توجد منتجات تطابق الفلتر</p></div>';
+            countEl.textContent = '0 منتجات';
+            return;
+        }
+
+        countEl.textContent = currentLang === 'ar' ? `عرض ${list.length} منتج` :
+            currentLang === 'en' ? `Showing ${list.length} products` :
+                `מציג ${list.length} מוצרים`;
+
+        grid.innerHTML = list.map((p, i) => {
+            const name = p[`name_${currentLang}`] || p.name_ar;
+            const defaultColor = p.colors[0];
+            const images = p.colorImgs[defaultColor] || [];
+            carouselState[p.id] = { color: defaultColor, slide: 0 };
+
+            const slidesHTML = images.map((src, idx) =>
+                `<img class="carousel-slide ${idx === 0 ? 'active' : ''}" src="${src}" alt="${name}" loading="lazy">`
+            ).join('');
+
+            const dotsHTML = images.length > 1 ?
+                `<div class="carousel-dots">${images.map((_, idx) =>
+                    `<button class="carousel-dot ${idx === 0 ? 'active' : ''}" onclick="dotClick(${p.id}, ${idx})"></button>`
+                ).join('')}</div>` : '';
+
+            const swatchesHTML = p.colors.map((c, idx) =>
+                `<div class="swatch-circle ${idx === 0 ? 'active' : ''}" style="background:${colorCode(c)}" onclick="switchColor(this, ${p.id}, '${c}')"></div>`
+            ).join('');
+
+            const delay = Math.floor(i / 4) * 80 + (i % 4) * 60;
+
+            return `
+            <div class="product-card" id="card-${p.id}" data-id="${p.id}" data-delay="${delay}">
+                <div class="product-img-wrap" id="imgwrap-${p.id}">
+                    ${slidesHTML}
+                    ${dotsHTML}
+                    <div class="logo-badge">
+                        <img src="pic/logo2.png" alt="DEMOISELLE">
+                    </div>
+                    <button class="wishlist-btn ${wishlist.has(p.id) ? 'active' : ''}" onclick="toggleWishlist(this, ${p.id})">
+                        <i class="fa-${wishlist.has(p.id) ? 'solid' : 'regular'} fa-heart"></i>
+                    </button>
+                    <!-- زر أضف إلى السلة على الصورة -->
+                    <div class="add-to-cart-overlay">
+                        <button class="add-to-cart-btn" onclick="addToCart(${p.id})">
+                            <i class="fa-solid fa-cart-plus"></i>
+                            ${currentLang === 'en' ? 'Add to Cart' : currentLang === 'he' ? 'הוסף לסל' : 'أضف إلى السلة'}
+                        </button>
+                    </div>
+                </div>
+                <div class="swatches-row">${swatchesHTML}</div>
+                <div class="product-info">
+                    <div class="product-name">${name}</div>
+                    <div class="price-sale">${p.price} ₪</div>
+                    ${p.old ? `<div class="price-old">${p.old} ₪</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+        setupObserver();
+        document.querySelectorAll('.product-card').forEach(card => revealObserver.observe(card));
+    }
+
+    function colorCode(c) {
+        const map = {White:"#f8f8f8",Black:"#1a1a1a",Blue:"#3b7dd4",Red:"#ca192c",Grey:"#888",Yellow:"#f5d76e",
+            Pink:"#ff69b4",Beige:"#d2b48c",Brown:"#8b5a2b",Burgundy:"#800000",Camel:"#c19a6b",
+            Denim:"#2c5f8c",Navy:"#001f3f","Off White":"#f5f0e6"};
+        return map[c] || "#ccc";
+    }
+
+    function applyFilters() {
+        const selectedColors = Array.from(document.querySelectorAll('.color-grid input:checked')).map(cb => cb.value);
+        const minPrice = parseInt(document.getElementById('priceRangeMin').value);
+        const maxPrice = parseInt(document.getElementById('priceRangeMax').value);
+        filteredProducts = products.filter(p =>
+            p.price >= minPrice && p.price <= maxPrice &&
+            (selectedColors.length === 0 || p.colors.some(c => selectedColors.includes(c)))
+        );
+        applySort();
+    }
+
+    function applySort() {
+        const sortValue = document.getElementById('sortSelect').value;
+        let sorted = [...filteredProducts];
+        if (sortValue === 'price_asc') sorted.sort((a,b) => a.price - b.price);
+        if (sortValue === 'price_desc') sorted.sort((a,b) => b.price - a.price);
+        renderProducts(sorted);
+    }
+
+    function updatePriceDisplay() {
+        document.getElementById('priceMinDisplay').textContent = document.getElementById('priceRangeMin').value;
+        document.getElementById('priceMaxDisplay').textContent = document.getElementById('priceRangeMax').value;
+    }
+
+    function toggleSize(btn) {
+        btn.classList.toggle('active');
+    }
+
+    function clearAllFilters() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('priceRangeMin').value = 0;
+        document.getElementById('priceRangeMax').value = 1500;
+        updatePriceDisplay();
+        applyFilters();
+    }
+
+    function toggleNavDrawer() {
+        const d = document.getElementById('navDrawer');
+        const o = document.getElementById('navDrawerOverlay');
+        d.classList.toggle('open');
+        o.classList.toggle('open');
+    }
+
+    function toggleDrawer() {
+        const d = document.getElementById('filterDrawer');
+        const o = document.getElementById('drawerOverlay');
+        d.classList.toggle('open');
+        o.classList.toggle('open');
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.documentElement.lang = lang;
+        document.documentElement.dir = (lang === 'en') ? 'ltr' : 'rtl';
+        document.querySelectorAll('[data-' + lang + ']').forEach(el => {
+            if (el.getAttribute('data-' + lang)) el.textContent = el.getAttribute('data-' + lang);
+        });
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`button[onclick="setLang('${lang}')"]`).classList.add('active');
+        renderProducts(filteredProducts);
+    }
+
+    window.onload = () => {
+        document.getElementById('cartBadge').textContent = cart.length;
+        updatePriceDisplay();
+        setLang('ar');
+    };
+</script>
+</body>
+</html>

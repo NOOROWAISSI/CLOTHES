@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMOISELLE - أحدث المنتجات</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root{
+            --black: #000000;
+            --gray1: #1e1e1e;
+            --gray2: #2a2a2a;
+            --gray3: #3d3d3d;
+            --gray4: #555555;
+            --gray5: #777777;
+            --gray6: #999999;
+            --gray7: #bbbbbb;
+            --light: #f0f0f0;
+            --lighter: #f8f8f8;
+            --white: #ffffff;
+            --red: #ca192c;
+        }
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Tajawal',sans-serif;background:var(--white);color:var(--black);}
+
+        .lang-switcher{background:var(--black);display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:5px 60px;font-size:11px;}
+        .lang-btn{padding:4px 12px;border:1px solid transparent;border-radius:2px;cursor:pointer;font-weight:700;color:var(--gray5);transition:all .2s;}
+        .lang-btn:hover{color:var(--white);}
+        .lang-btn.active{background:linear-gradient(135deg,var(--gray2),var(--gray1));color:var(--white);}
+        .lang-sep{color:var(--gray4);}
+
+        .offer-bar{background:var(--black);color:var(--gray7);text-align:center;padding:9px 20px;font-size:12px;font-weight:500;letter-spacing:.5px;border-bottom:1px solid var(--gray2);}
+
+        .header{background:var(--white);border-bottom:1px solid var(--gray6);padding:0 60px;height:68px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+        .header-logo img{height:52px;width:auto;}
+        .header-nav{display:flex;align-items:center;gap:22px;flex:1;justify-content:center;}
+        .header-nav a{font-size:13px;font-weight:500;color:var(--gray4);letter-spacing:1px;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s;}
+        .header-nav a:hover{color:var(--black);border-bottom-color:var(--gray3);}
+        .header-actions{display:flex;align-items:center;gap:16px;}
+        .h-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid var(--gray5);border-radius:4px;font-size:12.5px;font-weight:600;color:var(--gray4);cursor:pointer;transition:all .2s;background:var(--white);}
+        .h-btn:hover{background:var(--lighter);border-color:var(--gray3);color:var(--black);}
+        .cart-badge{background:var(--black);color:var(--white);font-size:10px;font-weight:700;padding:2px 6px;border-radius:50%;}
+
+        .breadcrumb{padding:14px 60px;font-size:13px;color:var(--gray5);background:var(--lighter);border-bottom:1px solid var(--gray6);}
+
+        .collection-header{text-align:center;padding:30px 60px 20px;}
+        .collection-title{font-family:'Playfair Display',serif;font-size:29px;letter-spacing:3px;margin-bottom:12px;}
+        .collection-hint{max-width:460px;margin:0 auto;font-size:11.5px;color:var(--gray5);background:rgba(255,255,224,0.4);border:1px solid rgba(0,0,0,0.08);border-radius:8px;padding:10px 16px;line-height:1.6;}
+
+        .toolbar{display:flex;align-items:center;justify-content:space-between;padding:16px 60px;border-bottom:1px solid var(--gray6);background:var(--white);flex-wrap:wrap;gap:12px;}
+        .product-count{font-size:14px;color:var(--gray5);}
+        .sort-wrap{display:flex;align-items:center;gap:8px;font-size:13.5px;}
+        .sort-wrap label{color:var(--gray5);}
+        .sort-select{padding:8px 12px;border:1.5px solid var(--gray5);border-radius:4px;background:var(--white);font-size:13.5px;}
+
+        .page-layout{display:flex;gap:0;}
+        .sidebar{width:280px;flex-shrink:0;border-left:1px solid var(--gray6);padding:30px 25px;background:var(--white);position:sticky;top:68px;max-height:calc(100vh-68px);overflow-y:auto;display:none;}
+        @media(min-width:992px){.sidebar{display:block;}}
+
+        .products-main{flex:1;padding:25px 40px;}
+        .products-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(255px,1fr));gap:26px;}
+
+        /* Product Card + Logo */
+        .product-card{background:var(--white);border-radius:8px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.08);transition:all .3s;}
+        .product-card:hover{transform:translateY(-10px);box-shadow:0 20px 40px rgba(0,0,0,0.15);}
+
+        .product-img-wrap{position:relative;aspect-ratio:3/4;overflow:hidden;background:var(--lighter);border:1px solid var(--gray6);}
+        .product-img-wrap img{width:100%;height:100%;object-fit:cover;transition:all .4s;}
+
+        .product-img-wrap::after {
+            content: "";
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 78px;
+            height: 78px;
+            background-image: url('pic/logo1.jpeg');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.85;
+            z-index: 6;
+            pointer-events: none;
+            filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+        }
+
+        .product-info{padding:14px 18px;text-align:center;}
+        .product-name{font-size:16px;font-weight:500;margin-bottom:8px;}
+        .price-sale{font-size:17.5px;font-weight:700;color:var(--red);}
+        .price-old{font-size:13.5px;color:var(--gray5);text-decoration:line-through;}
+
+        .swatches-row{display:flex;justify-content:center;gap:8px;padding:12px 0;}
+        .swatch-circle{width:28px;height:28px;border-radius:50%;border:2px solid #ddd;cursor:pointer;transition:all .2s;}
+        .swatch-circle:hover,.swatch-circle.active{border-color:var(--black);transform:scale(1.15);}
+
+        /* Sidebar */
+        .sidebar-section{margin-bottom:32px;}
+        .sidebar-section-title{font-size:13.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--gray6);}
+        .color-grid{display:grid;grid-template-columns:1fr;gap:10px;}
+        .filter-check{display:flex;align-items:center;gap:10px;font-size:13.8px;cursor:pointer;}
+        .filter-check input{width:16px;height:16px;accent-color:var(--black);}
+        .size-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(45px,1fr));gap:8px;}
+        .size-btn{border:1px solid var(--gray6);padding:9px 6px;text-align:center;font-size:13px;cursor:pointer;border-radius:4px;transition:all .2s;}
+        .size-btn.active{background:var(--black);color:white;border-color:var(--black);}
+
+        .price-range-container{padding:10px 0;}
+        .price-values{display:flex;justify-content:space-between;font-size:13px;color:var(--gray5);margin-bottom:8px;}
+        .apply-price{width:100%;margin-top:15px;padding:12px;background:var(--black);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;}
+
+        .clear-filters-btn{background:none;border:none;color:var(--gray5);text-decoration:underline;cursor:pointer;margin-top:15px;font-size:13.5px;}
+    </style>
+</head>
+<body>
+
+<!-- Lang Switcher -->
+<div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('ar')">العربية</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('en')">English</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('he')">עברית</button>
+</div>
+
+<!-- Offer Bar -->
+<div class="offer-bar" id="offerBar">🚚 اطلبي بـ 500₪ واحصلي على توصيل مجاني للضفة الغربية &nbsp;|&nbsp; القدس 10₪ &nbsp;|&nbsp; الداخل 30₪</div>
+
+<!-- Header -->
+<header class="header">
+    <a href="/" class="header-logo"><img src="pic/logo .jpeg" alt="DEMOISELLE"></a>
+    <div class="header-nav">
+        <a href="#" data-ar="بدلات" data-en="Suits" data-he="חליפות">بدلات</a>
+        <a href="#" data-ar="فساتين" data-en="Dresses" data-he="שמלות">فساتين</a>
+        <a href="#" data-ar="طقم قطعتين" data-en="Two-Piece Sets" data-he="סט דו-חלקי">طقم قطعتين</a>
+        <a href="#" data-ar="جاكيت" data-en="Jackets" data-he="ז'קטים">جاكيت</a>
+        <a href="#" data-ar="جينز" data-en="Jeans" data-he="ג'ינס">جينז</a>
+        <a href="#" data-ar="تنانير" data-en="Skirts" data-he="חצאיות">تنانير</a>
+        <a href="#" data-ar="بليزر" data-en="Blazers" data-he="בלייזרים">بليزر</a>
+        <a href="#" data-ar="عبايات" data-en="Abayas" data-he="עבאיות">عبايات</a>
+    </div>
+    <div class="header-actions">
+        <div class="h-btn"><i class="fa-solid fa-magnifying-glass"></i><span data-ar="بحث" data-en="Search" data-he="חיפוש">بحث</span></div>
+        <div class="h-btn"><i class="fa-solid fa-user"></i><span data-ar="حسابي" data-en="My Account" data-he="החשבון שלי">حسابي</span></div>
+        <div class="h-btn" style="position:relative"><i class="fa-solid fa-cart-shopping"></i><span class="cart-badge">0</span></div>
+    </div>
+</header>
+
+<nav class="breadcrumb" id="breadcrumb">الرئيسية / أحدث المنتجات</nav>
+
+<div class="collection-header">
+    <h1 class="collection-title" id="collectionTitle">أحدث المنتجات</h1>
+    <div class="collection-hint" id="collectionHint">استخدمي الفلتر للتسوق حسب <strong>القسم</strong>، <strong>اللون</strong>، <strong>المقاس</strong></div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+    <button class="filter-btn" onclick="toggleMobileSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="m3 6.25c-.41421 0-.75.33579-.75.75s.33579.75.75.75zm0 10c-.41421 0-.75.3358-.75.75s.33579.75.75.75zm6 1.5c.41421 0 .75-.3358.75-.75s-.33579-.75-.75-.75zm12 0c.4142 0 .75-.3358.75-.75s-.3358-.75-.75-.75zm-6-11.5c-.4142 0-.75.33579-.75.75s.3358.75.75.75zm6 1.5c.4142 0 .75-.33579.75-.75s-.3358-.75-.75-.75zm-18 0h3v-1.5h-3zm0 10h6v-1.5h-6zm15 0h3v-1.5h-3zm-3-10h6v-1.5h-6zm2.25 9.25c0 1.2426-1.0074 2.25-2.25 2.25v1.5c2.0711 0 3.75-1.6789 3.75-3.75zm-2.25 2.25c-1.2426 0-2.25-1.0074-2.25-2.25h-1.5c0 2.0711 1.6789 3.75 3.75 3.75zm-2.25-2.25c0-1.2426 1.0074-2.25 2.25-2.25v-1.5c-2.0711 0-3.75 1.6789-3.75 3.75zm2.25-2.25c1.2426 0 2.25 1.0074 2.25 2.25h1.5c0-2.0711-1.6789-3.75-3.75-3.75zm-3.75-7.75c0 1.24264-1.0074 2.25-2.25 2.25v1.5c2.0711 0 3.75-1.67893 3.75-3.75zm-2.25 2.25c-1.24264 0-2.25-1.00736-2.25-2.25h-1.5c0 2.07107 1.67893 3.75 3.75 3.75zm-2.25-2.25c0-1.24264 1.00736-2.25 2.25-2.25v-1.5c-2.07107 0-3.75 1.67893-3.75 3.75zm2.25-2.25c1.2426 0 2.25 1.00736 2.25 2.25h1.5c0-2.07107-1.6789-3.75-3.75-3.75z" fill="#28303f"></path></svg>
+        <span data-ar="فلتر" data-en="Filter" data-he="סינון">فلتر</span>
+    </button>
+    <span class="product-count" id="productCount">عرض 8 منتجات</span>
+    <div class="sort-wrap">
+        <label data-ar="ترتيب:" data-en="Sort:" data-he="מיון:">ترتيب:</label>
+        <select class="sort-select" onchange="applySort()">
+            <option value="newest" data-ar="الأحدث" data-en="Newest" data-he="החדש ביותר">الأحدث</option>
+            <option value="price_asc" data-ar="السعر: الأقل" data-en="Price: Low to High" data-he="מחיר: נמוך לגבוה">السعر: الأقل</option>
+            <option value="price_desc" data-ar="السعر: الأعلى" data-en="Price: High to Low" data-he="מחיר: גבוה לנמוך">السعر: الأعلى</option>
+        </select>
+    </div>
+</div>
+
+<div class="page-layout">
+    <aside class="sidebar" id="desktopSidebar">
+        <!-- Color -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="اللون / Color" data-en="Color" data-he="צבע">اللون / Color</div>
+            <div class="color-grid">
+                <label class="filter-check"><input type="checkbox" value="White" onchange="applyFilters()"><span data-ar="أبيض" data-en="White" data-he="לבן">أبيض</span></label>
+                <label class="filter-check"><input type="checkbox" value="Black" onchange="applyFilters()"><span data-ar="أسود" data-en="Black" data-he="שחור">أسود</span></label>
+                <label class="filter-check"><input type="checkbox" value="Blue" onchange="applyFilters()"><span data-ar="أزرق" data-en="Blue" data-he="כחול">أزرق</span></label>
+                <label class="filter-check"><input type="checkbox" value="Red" onchange="applyFilters()"><span data-ar="أحمر" data-en="Red" data-he="אדום">أحمر</span></label>
+                <label class="filter-check"><input type="checkbox" value="Grey" onchange="applyFilters()"><span data-ar="رمادي" data-en="Grey" data-he="אפור">رمادي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Yellow" onchange="applyFilters()"><span data-ar="أصفر" data-en="Yellow" data-he="צהוב">أصفر</span></label>
+                <label class="filter-check"><input type="checkbox" value="Pink" onchange="applyFilters()"><span data-ar="وردي" data-en="Pink" data-he="ורוד">وردي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Beige" onchange="applyFilters()"><span data-ar="بيج" data-en="Beige" data-he="בז'">بيج</span></label>
+                <label class="filter-check"><input type="checkbox" value="Brown" onchange="applyFilters()"><span data-ar="بني" data-en="Brown" data-he="חום">بني</span></label>
+                <label class="filter-check"><input type="checkbox" value="Burgundy" onchange="applyFilters()"><span data-ar="نبيذي" data-en="Burgundy" data-he="בורגונדי">نبيذي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Camel" onchange="applyFilters()"><span data-ar="كاميل" data-en="Camel" data-he="קמל">كاميل</span></label>
+                <label class="filter-check"><input type="checkbox" value="Denim" onchange="applyFilters()"><span data-ar="دنيم" data-en="Denim" data-he="דנים">دنيم</span></label>
+                <label class="filter-check"><input type="checkbox" value="Navy" onchange="applyFilters()"><span data-ar="نيفي" data-en="Navy" data-he="כחול כהה">نيفي</span></label>
+                <label class="filter-check"><input type="checkbox" value="Off White" onchange="applyFilters()"><span data-ar="أوف وايت" data-en="Off White" data-he="לבן שמנת">أوف وايت</span></label>
+            </div>
+        </div>
+
+        <!-- Size -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="المقاس / Size" data-en="Size" data-he="מידה">المقاس / Size</div>
+            <div class="size-grid">
+                <div class="size-btn" onclick="toggleSize(this)">XS</div>
+                <div class="size-btn" onclick="toggleSize(this)">S</div>
+                <div class="size-btn" onclick="toggleSize(this)">M</div>
+                <div class="size-btn" onclick="toggleSize(this)">L</div>
+                <div class="size-btn" onclick="toggleSize(this)">XL</div>
+                <div class="size-btn" onclick="toggleSize(this)">36</div>
+                <div class="size-btn" onclick="toggleSize(this)">38</div>
+                <div class="size-btn" onclick="toggleSize(this)">40</div>
+            </div>
+        </div>
+
+        <!-- Price Slider -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title" data-ar="السعر / Price (₪)" data-en="Price (₪)" data-he="מחיר (₪)">السعر / Price (₪)</div>
+            <div class="price-range-container">
+                <div class="price-values">
+                    <span id="priceMinDisplay">0</span>
+                    <span id="priceMaxDisplay">1500</span>
+                </div>
+                <input type="range" id="priceRangeMin" min="0" max="1500" value="0" oninput="applyFilters()">
+                <input type="range" id="priceRangeMax" min="0" max="1500" value="1500" oninput="applyFilters()">
+            </div>
+            <button class="apply-price" onclick="applyFilters()" data-ar="تطبيق" data-en="Apply" data-he="החל">تطبيق</button>
+        </div>
+
+        <button class="clear-filters-btn" onclick="clearAllFilters()" data-ar="مسح كل الفلاتر" data-en="Clear All" data-he="נקה הכל">مسح كل الفلاتر</button>
+    </aside>
+
+    <main class="products-main">
+        <div class="products-grid" id="productsGrid"></div>
+    </main>
+</div>
+
+<script>
+    let currentLang = 'ar';
+    let selectedColors = [];
+
+    let products = [
+        {id:1, name_ar:"عباية كريب فاخرة", name_en:"Luxury Crepe Abaya", name_he:"עבאיה קרפ יוקרתית", price:349, old:449, img:"https://i.pinimg.com/736x/85/04/87/850487268a31159ae8f13a5926f29cf2.jpg", colors:["Black","Beige"]},
+        {id:2, name_ar:"فستان عباية بيج", name_en:"Elegant Beige Abaya", name_he:"שמלת עבאיה בז'", price:289, old:379, img:"https://i.pinimg.com/736x/40/5f/5e/405f5e4d3d554de3cb51760f14fda7dd.jpg", colors:["Beige","Off White"]},
+        {id:3, name_ar:"عباية مطرزة رمادي", name_en:"Embroidered Grey Abaya", name_he:"עבאיה רקומה אפור", price:399, old:499, img:"https://via.placeholder.com/600x800/1a1a1a/ffffff?text=Grey+Abaya", colors:["Grey","Black"]},
+        {id:4, name_ar:"عباية نيدة سوداء", name_en:"Classic Black Abaya", name_he:"עבאיה שחורה", price:259, old:329, img:"https://i.pinimg.com/736x/12/34/56/1234567890abcdef.jpg", colors:["Black"]},
+        {id:5, name_ar:"فستان وردي", name_en:"Pink Abaya Gown", name_he:"שמלה ורודה", price:319, old:399, img:"https://via.placeholder.com/600x800/ff69b4/ffffff?text=Pink", colors:["Pink"]},
+        {id:6, name_ar:"عباية كاميل", name_en:"Camel Abaya", name_he:"עבאיה קמל", price:279, old:359, img:"https://i.pinimg.com/736x/ab/cd/ef/abcdef.jpg", colors:["Camel","Brown"]},
+        {id:7, name_ar:"عباية نبيذي فاخرة", name_en:"Burgundy Luxury Abaya", name_he:"עבאיה בורגונדי", price:429, old:529, img:"https://via.placeholder.com/600x800/800000/ffffff?text=Burgundy", colors:["Burgundy"]},
+        {id:8, name_ar:"عباية أوف وايت", name_en:"Off-White Abaya", name_he:"עבאיה לבנה", price:369, old:459, img:"https://i.pinimg.com/736x/98/76/54/987654.jpg", colors:["Off White","Beige"]}
+    ];
+
+    function renderProducts(filtered = products) {
+        const grid = document.getElementById('productsGrid');
+        grid.innerHTML = '';
+        filtered.forEach(p => {
+            const name = currentLang === 'ar' ? p.name_ar : currentLang === 'en' ? p.name_en : p.name_he;
+            let swatches = p.colors.map(c => `<div class="swatch-circle" style="background:${getColorCode(c)}" title="${c}"></div>`).join('');
+
+            grid.innerHTML += `
+                <div class="product-card">
+                    <div class="product-img-wrap">
+                        <img src="${p.img}" alt="${name}">
+                    </div>
+                    <div class="swatches-row">${swatches}</div>
+                    <div class="product-info">
+                        <div class="product-name">${name}</div>
+                        <div class="price-sale">${p.price} ₪</div>
+                        ${p.old ? `<div class="price-old">${p.old} ₪</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function getColorCode(color) {
+        const codes = {White:"#f8f8f8", Black:"#1a1a1a", Blue:"#3b7dd4", Red:"#ca192c", Grey:"#888", Yellow:"#f5d76e", Pink:"#ff69b4",
+            Beige:"#d2b48c", Brown:"#8b5a2b", Burgundy:"#800000", Camel:"#c19a6b", Denim:"#2c5f8c", Navy:"#001f3f", OffWhite:"#f5f0e6"};
+        return codes[color] || "#ccc";
+    }
+
+    function applyFilters() {
+        selectedColors = Array.from(document.querySelectorAll('.color-grid input:checked')).map(cb => cb.value);
+
+        let minPrice = parseInt(document.getElementById('priceRangeMin').value);
+        let maxPrice = parseInt(document.getElementById('priceRangeMax').value);
+
+        let filtered = products.filter(p => {
+            const priceMatch = p.price >= minPrice && p.price <= maxPrice;
+            const colorMatch = selectedColors.length === 0 || p.colors.some(c => selectedColors.includes(c));
+            return priceMatch && colorMatch;
+        });
+
+        renderProducts(filtered);
+    }
+
+    function setLang(lang) {
+        currentLang = lang;
+        document.documentElement.dir = lang === 'en' ? 'ltr' : 'rtl';
+        document.querySelectorAll('[data-' + lang + ']').forEach(el => {
+            if (el.getAttribute('data-' + lang)) el.textContent = el.getAttribute('data-' + lang);
+        });
+        applyFilters();
+    }
+
+    function toggleSize(btn) { btn.classList.toggle('active'); }
+    function applySort() { console.log("تم تغيير الترتيب"); }
+
+    function clearAllFilters() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.size-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('priceRangeMin').value = 0;
+        document.getElementById('priceRangeMax').value = 1500;
+        applyFilters();
+    }
+
+    function toggleMobileSidebar() {
+        document.getElementById('mobileSidebar').classList.toggle('open');
+        document.getElementById('filterOverlay').classList.toggle('open');
+    }
+
+    window.addEventListener('scroll', () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 400) {
+            console.log("جاري تحميل المزيد...");
+        }
+    });
+
+    window.onload = () => {
+        setLang('ar');
+        document.getElementById('priceMinDisplay').textContent = 0;
+        document.getElementById('priceMaxDisplay').textContent = 1500;
+        applyFilters();
+    };
+</script>
+
+<!-- Mobile Filter -->
+<div class="filter-overlay" id="filterOverlay" onclick="toggleMobileSidebar()"></div>
+<div class="mobile-sidebar" id="mobileSidebar">
+    <h3 data-ar="فلتر المنتجات" data-en="Filter Products" data-he="סינון מוצרים">فلتر المنتجات</h3>
+    <button onclick="toggleMobileSidebar()" style="margin-top:30px;width:100%;padding:14px;background:var(--black);color:white;border:none;border-radius:4px;" data-ar="عرض النتائج" data-en="Show Results" data-he="הצג תוצאות">عرض النتائج</button>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMOISELLE</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        :root{
+            --black: #000000;
+            --gray1: #1e1e1e;
+            --gray2: #2a2a2a;
+            --gray3: #3d3d3d;
+            --gray4: #555555;
+            --gray5: #777777;
+            --gray6: #999999;
+            --gray7: #bbbbbb;
+            --light: #f0f0f0;
+            --lighter: #0e0c0c;
+            --white: #ffffff;
+        }
+        body{background:var(--white);color:var(--black);font-family:'Tajawal',sans-serif;}
+        a{text-decoration:none;color:inherit;}
+        /* Lang Switcher */
+        .lang-switcher{background:var(--black);display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:5px 60px;font-size:11px;}
+        .lang-btn{padding:4px 12px;border:1px solid transparent;border-radius:2px;cursor:pointer;font-size:11px;font-weight:700;letter-spacing:1px;color:var(--gray5);transition:all .2s;background:none;}
+        .lang-btn:hover{color:var(--white);}
+        .lang-btn.active{background:linear-gradient(135deg,var(--gray2),var(--gray1));color:var(--white);}
+        .lang-sep{color:var(--gray4);}
+        /* Offer Bar */
+        .offer-bar{background:var(--black);color:var(--gray7);text-align:center;padding:9px 20px;font-size:12px;font-weight:500;letter-spacing:.5px;border-bottom:1px solid var(--gray2);}
+        /* Header - Logo is now an image */
+        .header{background:var(--white);border-bottom:1px solid var(--gray6);padding:0 60px;height:68px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+        .header-logo img{height:50px;width:auto;}
+        .header-nav{display:flex;align-items:center;gap:22px;flex:1;justify-content:center;}
+        .header-nav a{font-size:13px;font-weight:500;color:var(--gray4);letter-spacing:1px;padding:4px 0;border-bottom:2px solid transparent;transition:all .2s;}
+        .header-nav a:hover{color:var(--black);border-bottom-color:var(--gray3);}
+        .header-actions{display:flex;align-items:center;gap:16px;}
+        .h-btn{display:flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid var(--gray5);border-radius:4px;font-size:12.5px;font-weight:600;color:var(--gray4);cursor:pointer;transition:all .2s;background:var(--white);}
+        .h-btn:hover{background:var(--lighter);border-color:var(--gray3);color:var(--black);}
+        .cart-badge{background:var(--black);color:var(--white);font-size:10px;font-weight:700;padding:2px 6px;border-radius:50%;}
+        /* Marquee */
+        .marquee-wrap{background:var(--lighter);border-bottom:1px solid var(--gray7);overflow:hidden;padding:8px 0;}
+        .marquee-track{display:flex;animation:marquee 24s linear infinite;white-space:nowrap;}
+        .marquee-item{display:inline-flex;align-items:center;gap:10px;padding:0 26px;font-size:10.5px;font-weight:700;letter-spacing:2px;color:var(--gray3);text-transform:uppercase;}
+        .marquee-dot{width:4px;height:4px;background:var(--gray4);border-radius:50%;}
+        @keyframes marquee{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+        /* Hero - Your 1280x814 photo */
+        .hero{
+            background: url('pic/home1.jpeg') center/cover no-repeat;
+            position:relative;
+            overflow:hidden;
+            min-height:850px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .hero::after{
+            content:'';
+            position:absolute;
+            inset:0;
+            background: linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.5));
+        }
+        .hero-lines{position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,.08) 39px,rgba(255,255,255,.08) 40px),repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(255,255,255,.05) 59px,rgba(255,255,255,.05) 60px);}
+        .hero-inner{position:relative;z-index:2;text-align:center;padding:50px 40px;display:flex;flex-direction:column;align-items:center;gap:10px;max-width:760px;}
+        .hero-eyebrow{font-size:10px;letter-spacing:8px;text-transform:uppercase;color:var(--gray6);font-weight:600;}
+        .hero-title{font-family:'Playfair Display',serif;font-size:68px;font-weight:700;letter-spacing:8px;line-height:1;background:linear-gradient(160deg,var(--white) 30%,var(--gray7) 70%,var(--gray4) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+        .hero-rule{width:110px;height:2px;background:linear-gradient(90deg,transparent,var(--gray4),var(--gray6),var(--gray4),transparent);margin:6px auto;}
+        .hero-sub{font-size:11px;letter-spacing:6px;text-transform:uppercase;color:var(--gray6);}
+        .hero-btn{margin-top:12px;display:inline-flex;align-items:center;gap:10px;border:2px solid var(--gray5);color:var(--gray7);padding:12px 42px;font-size:12.5px;letter-spacing:4px;text-transform:uppercase;font-weight:700;cursor:pointer;transition:all .3s;position:relative;overflow:hidden;}
+        .hero-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--gray2),var(--black));opacity:0;transition:opacity .3s;}
+        .hero-btn:hover{color:var(--white);border-color:var(--gray3);}
+        .hero-btn:hover::before{opacity:1;}
+        .hero-btn span{position:relative;z-index:1;}
+        .page-wrap{max-width:1400px;margin:0 auto;padding:0 60px;}
+        /* Section Header */
+        .section-header{text-align:center;padding:45px 0 25px;}
+        .section-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;letter-spacing:2px;color:var(--black);}
+        .section-line{width:50px;height:2px;margin:10px auto 0;background:linear-gradient(90deg,var(--gray3),var(--gray5));}
+        /* Categories */
+        .cats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:30px 20px;padding:35px 0 60px;}
+        .cat-item{text-align:center;cursor:pointer;}
+        .cat-circle{width:145px;height:145px;margin:0 auto 12px;border-radius:50%;overflow:hidden;background:var(--black);border:5px solid var(--gray2);transition:all .3s;}
+        .cat-item:hover .cat-circle{transform:scale(1.12);border-color:var(--gray4);}
+        .cat-circle img{width:100%;height:100%;object-fit:cover;}
+        .cat-name{font-family:'Inter',sans-serif;font-size:19px;font-weight:400;color:var(--black);line-height:26px;}
+        /* Banners */
+        .banner-grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:18px;padding-bottom:40px;}
+        .banner-item{position:relative;overflow:hidden;border-radius:6px;cursor:pointer;background:var(--light);}
+        .banner-item.tall{grid-row:span 2;}
+        .banner-item img{width:100%;height:100%;object-fit:cover;transition:transform .4s;filter:grayscale(50%);}
+        .banner-item:hover img{transform:scale(1.05);filter:grayscale(10%);}
+        .banner-label{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.85));color:var(--white);font-size:14px;font-weight:700;padding:28px 16px 14px;text-align:center;letter-spacing:1.5px;}
+
+        /* ==================== NEWEST COLLECTION - SINGLE PHOTO WITH BUTTON ==================== */
+        .newest-collection {
+            margin: 0px 0 0px;
+            position: relative;
+            text-align: center;
+        }
+        .newest-photo {
+            width: 100%;
+            max-height: 400px;
+            max-width: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .newest-button {
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            color: var(--black);
+            border: none;
+            padding: 16px 52px;
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            transition: all .3s;
+            white-space: nowrap;
+        }
+        .newest-button:hover {
+            background: white;
+            transform: translateX(-50%) translateY(-4px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+        }
+
+        /* ==================== PRODUCTS GRID - RANDOM CLOTHES WITH PRICE & COLOR ==================== */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+            padding-bottom: 50px;
+        }
+        .product-card {
+            background: var(--white);
+            cursor: pointer;
+            position: relative;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            transition: all .3s;
+        }
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        .product-img-wrap {
+            position: relative;
+            overflow: hidden;
+            height: 340px;
+            background: var(--lighter);
+        }
+        .product-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity .4s ease;
+        }
+        .product-img-wrap img.alt {
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+        }
+        .product-card:hover .product-img-wrap img.alt {
+            opacity: 1;
+        }
+        .product-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--black);
+            color: var(--white);
+            padding: 4px 9px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .product-info {
+            padding: 16px;
+            text-align: center;
+        }
+        .product-name {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--black);
+            margin-bottom: 8px;
+        }
+        .product-pricing {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        .price-sale {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--black);
+        }
+        .price-old {
+            font-size: 14px;
+            color: var(--gray5);
+            text-decoration: line-through;
+        }
+        .color-options {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+        }
+        .color-dot {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            transition: all .2s;
+        }
+        .color-dot:hover,
+        .color-dot.active {
+            border-color: var(--black);
+            transform: scale(1.2);
+        }
+
+        /* View All */
+        .view-all-wrap {
+            text-align: center;
+            padding: 25px 0 50px;
+        }
+        .btn-view-all {
+            display: inline-block;
+            padding: 14px 55px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            border: 2px solid var(--black);
+            color: var(--white);
+            background: linear-gradient(135deg,var(--black),var(--gray2));
+            transition: all .3s;
+        }
+        .btn-view-all:hover {
+            transform: scale(1.05);
+        }
+        /* Footer */
+        /* ====================== FOOTER ====================== */
+        .footer-bottom {
+            background: var(--black);
+            padding: 60px 60px 40px;
+            color: var(--gray5);
+            font-size: 13.5px;
+        }
+
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.8fr 0.8fr 2fr 1.2fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .footer-copyright span {
+            font-size: 14px;
+            line-height: 1.6;
+            opacity: 0.85;
+        }
+
+        /* Policies */
+        .footer-policies {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-policies a {
+            color: var(--gray5);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-policies a:hover {
+            color: var(--white);
+        }
+
+        /* Subscribe */
+        .subscribe-title {
+            font-size: 21px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .subscribe-text {
+            line-height: 1.55;
+            margin-bottom: 20px;
+            max-width: 280px;
+        }
+
+        .subscribe-form {
+            display: flex;
+            gap: 10px;
+            max-width: 320px;
+        }
+
+        .subscribe-form input {
+            flex: 1;
+            padding: 14px 16px;
+            background: var(--gray2);
+            border: 1px solid var(--gray4);
+            color: var(--white);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .subscribe-form input::placeholder {
+            color: var(--gray6);
+        }
+
+        .subscribe-form button {
+            padding: 14px 32px;
+            background: #d4af37;
+            color: var(--black);
+            border: none;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .subscribe-form button:hover {
+            background: #fff;
+            transform: translateY(-2px);
+        }
+
+        /* Social Icons */
+        .footer-social {
+            display: flex;
+            gap: 20px;
+            justify-content: flex-end;
+        }
+
+        .footer-social a {
+            color: var(--gray5);
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+        .footer-social a:hover {
+            color: #d4af37;
+            transform: translateY(-3px);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .footer-container {
+                grid-template-columns: 1fr 1fr;
+            }
+            .footer-social {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .footer-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+                gap: 35px;
+            }
+            .footer-social {
+                justify-content: center;
+            }
+            .subscribe-form {
+                max-width: 100%;
+            }
+        }
+        /* لوغو على كل صور المنتجات */
+        .product-img-wrap {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-img-wrap::after {
+            content: "";
+            position: absolute;
+            top: 15px;           /* مسافة من الأعلى */
+            right: 15px;         /* مسافة من اليمين (غيرها لـ left إذا بدك يسار) */
+            width: 85px;         /* حجم اللوغو - غيره حسب حجم لوغوك */
+            height: 85px;        /* نفس الحجم */
+            background-image: url('pic/logo1.jpeg');   /* غير المسار لمسار لوغوك */
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.75;       /* شفافية (0.5 = أفتح، 1 = قوي) */
+            z-index: 2;
+            pointer-events: none; /* عشان ما يمنع الكليك على الصورة */
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); /* ظل خفيف للوضوح */
+        }
+
+        /* لو بدك اللوغو أصغر أو أكبر في الصور الكبيرة */
+        .product-img-wrap img {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+<div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('ar')">العربية</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('en')">English</button>
+    <span class="lang-sep">|</span>
+    <button class="lang-btn" onclick="setLang('he')">עברית</button>
+</div>
+
+<div class="offer-bar">
+        <span data-ar="🚚 اطلبي بـ 500₪ واحصلي على توصيل مجاني للضفة الغربية &nbsp;|&nbsp; القدس 10₪ &nbsp;|&nbsp; الداخل 30₪"
+              data-en="🚚 Order 500₪+ and get FREE delivery to the West Bank &nbsp;|&nbsp; Jerusalem 10₪ &nbsp;|&nbsp; Israel 30₪"
+              data-he="🚚 הזמיני ב-500₪ וקבלי משלוח חינם לגדה המערבית &nbsp;|&nbsp; ירושלים 10₪ &nbsp;|&nbsp; פנים הארץ 30₪">
+            🚚 اطلبي بـ 500₪ واحصلي على توصيل مجاني للضفة الغربية &nbsp;|&nbsp; القدس 10₪ &nbsp;|&nbsp; الداخل 30₪
+        </span>
+</div>
+
+<header class="header">
+    <a href="/" class="header-logo">
+        <img src="pic/logo1.jpeg" alt="DEMOISELLE">
+    </a>
+    <div class="header-nav">
+        <a href="#" data-ar="بدلات" data-en="Suits" data-he="חליפות">بدلات</a>
+        <a href="#" data-ar="فساتين" data-en="Dresses" data-he="שמלות">فساتين</a>
+        <a href="#" data-ar="طقم قطعتين" data-en="Two-Piece Sets" data-he="סט דו-חלקי">طقم قطعتين</a>
+        <a href="#" data-ar="جاكيت" data-en="Jackets" data-he="ז'קטים">جاكيت</a>
+        <a href="#" data-ar="جينز" data-en="Jeans" data-he="ג'ינס">جينز</a>
+        <a href="#" data-ar="تنانير" data-en="Skirts" data-he="חצאיות">تنانير</a>
+        <a href="#" data-ar="بليزر" data-en="Blazers" data-he="בלייזרים">بليزر</a>
+        <a href="#" data-ar="أحذية" data-en="Shoes" data-he="נעליים">أحذية</a>
+        <a href="#" data-ar="حقائب" data-en="Bags" data-he="תיקים">حقائب</a>
+        <a href="#" data-ar="عبايات" data-en="Abayas" data-he="עבאיות">عبايات</a>
+    </div>
+    <div class="header-actions">
+        <div class="h-btn">
+            <svg viewBox="0 0 32 32"><path d="M31.8 30.1l-8-8-.5-.2h-.6c2.1-2.3 3.5-5.4 3.5-8.8 0-7.2-5.8-13-13-13S0 5.8 0 13s5.8 13 13 13c3.4 0 6.5-1.3 8.8-3.5v.6l.2.5 8.1 8.1c.3.3.8.3 1.1 0l.6-.6c.3-.3.3-.8 0-1.1zM13 24C6.9 24 2 19.1 2 13S6.9 2 13 2s11 4.9 11 11-4.9 11-11 11z"/></svg>
+            <span data-ar="بحث" data-en="Search" data-he="חיפוש">بحث</span>
+        </div>
+        <div class="h-btn">
+            <svg viewBox="0 0 32 32"><path d="M15.7 18.2c-4.9 0-8.9-4-8.9-8.9S10.8.5 15.7.5s8.9 4 8.9 8.9-4.1 8.8-8.9 8.8zm0-16.5c-4.3 0-7.6 3.5-7.6 7.6s3.3 7.6 7.6 7.6c4.1 0 7.6-3.3 7.6-7.6 0-4.3-3.5-7.6-7.6-7.6zM30.6 31.5h-1.3c0-7.3-6-13.3-13.3-13.3S2.7 24.2 2.7 31.5H1.4c0-8.1 6.5-14.6 14.6-14.6s14.6 6.5 14.6 14.6z"/></svg>
+            <span data-ar="حسابي" data-en="My Account" data-he="החשבון שלי">حسابي</span>
+        </div>
+        <div class="h-btn">
+            <i class="fa-solid fa-cart-shopping" style="font-size: 18px;"></i>
+
+            <span class="cart-badge">0</span>
+        </div>
+    </div>
+    </div>
+</header>
+
+<div class="marquee-wrap"><div class="marquee-track" id="marquee1"></div></div>
+
+<div class="hero">
+    <div class="hero-lines"></div>
+    <div class="hero-inner">
+        <div class="hero-eyebrow" data-ar="تشكيلة العيد ٢٠٢٦" data-en="EID COLLECTION 2026" data-he="קולקציית עיד 2026">تشكيلة العيد ٢٠٢٦</div>
+        <h1 class="hero-title">DEMOISELLE</h1>
+        <div class="hero-rule"></div>
+        <div class="hero-sub" data-ar="وجهتك للموضة في فلسطين" data-en="Your Fashion Destination in Palestine" data-he="יעד האופנה שלך בפלסטין">وجهتك للموضة في فلسطين</div>
+        <a href="#products" class="hero-btn"><span data-ar="تسوقي الآن" data-en="SHOP NOW" data-he="קני עכשיו">تسوقي الآن</span></a>
+    </div>
+</div>
+
+<div class="page-wrap">
+    <div class="section-header">
+        <h2 class="section-title" data-ar="تسوقي حسب الفئة" data-en="Shop by Category" data-he="קני לפי קטגוריה">تسوقي حسب الفئة</h2>
+        <div class="section-line"></div>
+    </div>
+    <div class="cats-grid">
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/jeans.jpg" alt=""></div><div class="cat-name" data-ar="جينز" data-en="Jeans" data-he="ג'ינס">Jeans</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Pants.png" alt=""></div><div class="cat-name" data-ar="بناطيل" data-en="Pants" data-he="מכנסיים">Pants</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Blouses.jpg" alt=""></div><div class="cat-name" data-ar="بلوزات" data-en="Blouses" data-he="חולצות">Blouses</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Shirts.jpg" alt=""></div><div class="cat-name" data-ar="قمصان" data-en="Shirts" data-he="חולצות">Shirts</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Dresses.jpg" alt=""></div><div class="cat-name" data-ar="فساتين" data-en="Dresses" data-he="שמלות">Dresses</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Formal.jpg" alt=""></div><div class="cat-name" data-ar="طقم رسمي" data-en="Formal sets" data-he="סטים רשמיים">Formal sets</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Jackets.jpg" alt=""></div><div class="cat-name" data-ar="جاكيت" data-en="Jackets" data-he="ז'קטים">Jackets</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Abaya.jpg" alt=""></div><div class="cat-name" data-ar="عباية" data-en="Abaya" data-he="עבאיה">Abaya</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Skirts.jpg" alt=""></div><div class="cat-name" data-ar="تنانير" data-en="Skirts" data-he="חצאיות">Skirts</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Bags.jpg" alt=""></div><div class="cat-name" data-ar="حقائب" data-en="Bags" data-he="תיקים">Bags</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Belts.jpg" alt=""></div><div class="cat-name" data-ar="أحزمة" data-en="Belts" data-he="חגורות">Belts</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Vests.jpg" alt=""></div><div class="cat-name" data-ar="سترات" data-en="Vests" data-he="אפודים">Vests</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Overalls.jpg" alt=""></div><div class="cat-name" data-ar="أوفرول" data-en="Overalls" data-he="אוברול">Overalls</div></a>
+        <a href="#" class="cat-item"><div class="cat-circle"><img src="pic/Full.png" alt=""></div><div class="cat-name" data-ar="طقم كامل" data-en="Full outfits" data-he="סטים מלאים">Full outfits</div></a>
+    </div>
+
+    <!-- تشكيلات مميزة (لم أغيرها) -->
+    <div class="section-header">
+        <h2 class="section-title" data-ar="تشكيلات مميزة" data-en="Featured Collections" data-he="קולקציות מיוחדות">تشكيلات مميزة</h2>
+        <div class="section-line"></div>
+    </div>
+
+</div>
+
+<!-- Newest Collection - صورة واحدة كبيرة مع زر داخلها (تحت تشكيلات مميزة) -->
+<div class="page-wrap">
+    <div class="newest-collection">
+        <img src="pic/new1.png"
+             alt="تشكيلة العيد 2026"
+             class="newest-photo">
+        <button onclick="alert('جاري الانتقال إلى تشكيلة العيد الكاملة...')" class="newest-button">
+            تسوقي تشكيلة العيد الجديدة
+        </button>
+    </div>
+</div>
+
+<div class="page-wrap">
+    <div id="products" class="section-header">
+        <h2 class="section-title" data-ar="أحدث المنتجات" data-en="Latest Products" data-he="המוצרים החדשים">أحدث المنتجات</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <!-- أحدث المنتجات - ملابس عشوائية مع أسعار وألوان -->
+    <div class="products-grid">
+
+        <!-- Product 1 -->
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <img src="pic/Dresses.jpg"
+                     class="main-img active"
+                     alt="فستان أنيق"
+                     data-color="0">
+
+
+                <img src="pic/Dresses1.jpg"
+                     class="alt"
+                     alt="فستان أنيق - لون أسود"
+                     data-color="1"
+                >
+            </div>
+
+            <div class="product-info">
+                <div class="product-name"
+                     data-ar="فستان أنيق"
+                     data-en="Elegant Dress"
+                     data-he="שמלה אלגנטית">
+                    فستان أنيق
+                </div>
+
+                <div class="product-pricing">
+                    <span class="price-sale">249.99 ₪</span>
+                    <span class="price-old">375.00 ₪</span>
+                </div>
+
+                <div class="color-options">
+                    <div class="color-dot active"
+                         style="background:#491919"
+                         data-color="0"
+                         onclick="switchColor(this)"></div>
+
+                    <div class="color-dot"
+                         style="background:#0e0c47"
+                         data-color="1"
+                         onclick="switchColor(this)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 2 -->
+        <!-- Product Card مع 3 ألوان و 3 صور -->
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <img src="pic/P2.jpg" class="main-img active" alt="بليزر - لون أسود" data-color="0">
+                <img src="pic/P1.jpg" class="alt" alt="بليزر - لون بني" data-color="1">
+                <img src="pic/P3.jpg" class="alt" alt="بليزر - لون زيتي" data-color="2">
+            </div>
+
+            <div class="product-info">
+                <div class="product-name"
+                     data-ar="بليزر كلاسيكي"
+                     data-en="Classic Blazer"
+                     data-he="בלייזר קלאסי">
+                    بليزر كلاسيكي
+                </div>
+
+                <div class="product-pricing">
+                    <span class="price-sale">319.99 ₪</span>
+                </div>
+
+                <div class="color-options">
+                    <div class="color-dot active"
+                         style="background:#473003"
+                         data-color="0"
+                         onclick="switchColor(this)"></div>
+
+                    <div class="color-dot"
+                         style="background:#0c0c0c"
+                         data-color="1"
+                         onclick="switchColor(this)"></div>
+
+                    <div class="color-dot"
+                         style="background:#403f1c"
+                         data-color="2"
+                         onclick="switchColor(this)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 3 -->
+        <!-- Product - بنطال جينز -->
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <img src="pic/JE.jpg" class="main-img active" alt="جينز - لون أسود" data-color="0">
+                <img src="pic/JJ2.jpg" class="alt" alt="جينز - لون أزرق" data-color="1">
+            </div>
+
+            <div class="product-info">
+                <div class="product-name"
+                     data-ar="بنطال جينز"
+                     data-en="Blue Denim Jeans"
+                     data-he="ג'ינס כחול">
+                    بنطال جينز أزرق
+                </div>
+
+                <div class="product-pricing">
+                    <span class="price-sale">189.99 ₪</span>
+                </div>
+
+                <div class="color-options">
+                    <div class="color-dot active"
+                         style="background:#88b2e8"
+                         data-color="0"
+                         onclick="switchColor(this)"></div>
+
+                    <div class="color-dot"
+                         style="background:#0f4877"
+                         data-color="1"
+                         onclick="switchColor(this)"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 4 -->
+        <!-- Product - طقم قطعتين أنيق -->
+        <div class="product-card">
+            <div class="product-img-wrap">
+                <img src="pic/SS.jpg"  class="main-img active" alt="طقم - لون بني غامق" data-color="0">
+                <img src="pic/SS1.jpg" class="alt"       alt="طقم - لون بيج" data-color="1">
+            </div>
+
+            <div class="product-info">
+                <div class="product-name"
+                     data-ar="طقم قطعتين أنيق"
+                     data-en="Elegant Two-Piece Set"
+                     data-he="סט דו-חלקי אלגנטי">
+                    طقم قطعتين أنيق
+                </div>
+
+                <div class="product-pricing">
+                    <span class="price-sale">429.99 ₪</span>
+                    <span class="price-old">550.00 ₪</span>
+                </div>
+
+                <div class="color-options">
+                    <div class="color-dot active"
+                         style="background:#272c1d"
+                         data-color="0"
+                         onclick="switchColor(this)"></div>
+
+                    <div class="color-dot"
+                         style="background:#491919"
+                         data-color="1"
+                         onclick="switchColor(this)"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<div class="view-all-wrap">
+    <a href="#" class="btn-view-all" data-ar="لمشاهدة كل القطع" data-en="VIEW ALL ITEMS" data-he="הצג את כל הפריטים">لمشاهدة كل القطع</a>
+</div>
+</div>
+
+<footer>
+    <div class="footer-skin-top"></div>
+
+    <div class="footer-bottom">
+        <div class="footer-container">
+
+            <!-- Copyright -->
+            <div class="footer-copyright">
+                <span data-ar="© 2026, DEMOISELLE. جميع الحقوق محفوظة."
+                      data-en="© 2026, DEMOISELLE. All rights reserved."
+                      data-he="© 2026, DEMOISELLE. כל הזכויות שמורות">
+                    © 2026, DEMOISELLE. جميع الحقوق محفوظة.
+                </span>
+            </div>
+
+            <!-- Policies -->
+            <div class="footer-policies">
+                <a href="#" data-ar="سياسة الموقع" data-en="Site Policies" data-he="מדיניות האתר">سياسة الموقع</a>
+                <a href="#" data-en="Policies">Policies</a>
+            </div>
+
+            <!-- Subscribe -->
+            <div class="footer-subscribe">
+                <p class="subscribe-title" data-ar="اشتركي" data-en="Subscribe" data-he="הירשמי">اشتركي</p>
+                <p class="subscribe-text"
+                   data-ar="خليكي على اطلاع بالقطع الجديدة والعروض"
+                   data-en="Stay updated with new pieces and special offers"
+                   data-he="הישארי מעודכנת עם פריטים חדשים והצעות מיוחדות">
+                    خليكي على اطلاع بالقطع الجديدة والعروض
+                </p>
+
+                <div class="subscribe-form">
+                    <input type="email"
+                           placeholder="Email address"
+                           data-ar="عنوان البريد الإلكتروني"
+                           data-en="Email address"
+                           data-he="כתובת דוא״ל">
+                    <button data-ar="اشترك" data-en="SIGN UP" data-he="הירשמי">SIGN UP</button>
+                </div>
+            </div>
+
+            <!-- Social Media -->
+            <!-- Social Media -->
+            <div class="footer-social">
+                <a href="#" target="_blank" aria-label="Facebook" title="Facebook">
+                    <i class="fa-brands fa-facebook-f"></i>
+                </a>
+                <a href="#" target="_blank" aria-label="Instagram" title="Instagram">
+                    <i class="fa-brands fa-instagram"></i>
+                </a>
+                <a href="#" target="_blank" aria-label="TikTok" title="TikTok">
+                    <i class="fa-brands fa-tiktok"></i>
+                </a>
+                <a href="#" target="_blank" aria-label="WhatsApp" title="WhatsApp">
+                    <i class="fa-brands fa-whatsapp"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</footer>
+
+<script>
+    // Marquee & Language functions (unchanged)
+    const T = {
+        ar: {
+            dir: 'rtl',
+            m1: [  // الماركي الرئيسي (يلف)
+                'أجمل تشكيلة أزياء نسائية في فلسطين',
+                'موديلات عصرية وأنيقة تناسب ذوقكِ',
+                'كل قطعة مصممة بعناية لتُبرز جمالكِ',
+                'أحدث صيحات الموضة تصل أول بأول',
+                'توصيل سريع وآمن لكل الضفة والقدس والداخل'
+            ],
+            m2: [  // الماركي القصير والتسويقي
+                'تشكيلة العيد الجديدة وصلت',
+                'أناقة تليق بكِ',
+                'موديلات حصرية 2026',
+                'جودة فاخرة بأسعار مميزة',
+                'تألقي بثقة في كل مناسبة'
+            ]
+        },
+
+        en: {
+            dir: 'ltr',
+            m1: [
+                "The Finest Women's Fashion in Palestine",
+                "Modern and elegant designs that match your taste",
+                "Every piece carefully crafted to highlight your beauty",
+                "Latest fashion trends arriving first",
+                "Fast and secure delivery across West Bank, Jerusalem & Israel"
+            ],
+            m2: [
+                'New Eid Collection Just Arrived',
+                'Elegance That Suits You',
+                'Exclusive 2026 Designs',
+                'Premium Quality at Great Prices',
+                'Shine with Confidence'
+            ]
+        },
+
+        he: {
+            dir: 'rtl',
+            m1: [
+                'האופנה הנשית היפה ביותר בפלסטין',
+                'עיצובים מודרניים ואלגנטיים שמתאימים לטעם שלך',
+                'כל פריט מעוצב בקפידה כדי להדגיש את יופייך',
+                'טרנדים חדשים של האופנה מגיעים ראשונים',
+                'משלוח מהיר ובטוח לגדה, ירושלים והארץ'
+            ],
+            m2: [
+                'קולקציית עיד החדשה הגיעה',
+                'אלגנטיות שמתאימה לך',
+                'עיצובים בלעדיים 2026',
+                'איכות פרימיום במחירים נהדרים',
+                'זרחי בביטחון'
+            ]
+        }
+    };
+    let cur='ar';
+    function bq(id,items){
+        const t=document.getElementById(id);
+        if(!t) return;
+        const d=[...items,...items];
+        t.innerHTML = d.map(s=>`<span class="marquee-item">${s}<span class="marquee-dot"></span></span>`).join('');
+    }
+    function setLang(l){
+        if(l===cur) return;
+        cur=l;
+        const h=document.documentElement;
+        h.setAttribute('lang',l);
+        h.setAttribute('dir',T[l].dir);
+        document.querySelectorAll('[data-'+l+']').forEach(el=>el.innerHTML=el.getAttribute('data-'+l));
+        bq('marquee1',T[l].m1);
+    }
+    bq('marquee1',T.ar.m1);
+
+    // Color switch function
+    function switchColor(dot) {
+        const card = dot.closest('.product-card');
+        if (!card) return;
+
+        const images = card.querySelectorAll('.product-img-wrap img');
+        const dots = card.querySelectorAll('.color-dot');
+
+        const selectedColor = parseInt(dot.getAttribute('data-color'));
+
+        // إخفاء كل الصور وإظهار الصورة المحددة فقط
+        images.forEach((img, index) => {
+            if (index === selectedColor) {
+                img.style.opacity = '1';
+                img.classList.add('active');
+            } else {
+                img.style.opacity = '0';
+                img.classList.remove('active');
+            }
+        });
+
+        // تفعيل النقطة المختارة
+        dots.forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+    }
+</script>
+</body>
+</html>
