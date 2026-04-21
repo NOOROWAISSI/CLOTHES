@@ -299,8 +299,9 @@
       pattern: (ctx,w,h)=>{ ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=1; for(let y=0;y<h;y+=6){ctx.beginPath(); for(let x=0;x<w;x+=12){ctx.moveTo(x,y);ctx.quadraticCurveTo(x+6,y-3,x+12,y);} ctx.stroke();} ctx.fillStyle='#252525'; ctx.fillRect(w*0.2,h*0.15,w*0.6,h*0.55); }},
   ];
 
-  let orderItems = clothesData.map(c => ({...c, qty: 1}));
-  let currentStep = 1;
+  const selectedProduct = getSelectedProductFromStorage();
+
+  let orderItems = selectedProduct ? [selectedProduct] : [];
 
   // --- GENERATE CLOTH IMAGE ---
   function generateClothImage(item, size=120) {
@@ -329,12 +330,11 @@
     const container = document.getElementById('order-items');
     container.innerHTML = '';
     orderItems.forEach((item, idx) => {
-      const imgSrc = generateClothImage(item);
-      const div = document.createElement('div');
+        const imgSrc = item.image ? item.image : generateClothImage(item);
+        const div = document.createElement('div');
       div.className = 'cloth-card flex gap-4 border border-black/10 rounded-lg p-3 anim-fade stagger-' + Math.min(idx+2, 5);
       div.innerHTML = `
-      <img src="${imgSrc}" alt="${item.name}" class="w-20 h-26 object-cover rounded" loading="lazy" onerror="this.style.background='#e5e7eb';this.alt='Image unavailable';">
-      <div class="flex-1 min-w-0">
+<img src="${imgSrc}" alt="${item.name}" class="w-20 h-26 object-cover rounded" loading="lazy" onerror="this.src=''; this.style.background='#e5e7eb'; this.alt='Image unavailable';">      <div class="flex-1 min-w-0">
         <div class="flex justify-between items-start">
           <div>
             <h3 class="text-sm font-medium truncate">${item.name}</h3>
@@ -560,7 +560,25 @@
       ['exchange_policy_text', config.exchange_policy_text || defaultConfig.exchange_policy_text],
     ])
   });
+  function getSelectedProductFromStorage() {
+      const raw = localStorage.getItem('selectedProduct');
+      if (!raw) return null;
 
+      try {
+          const product = JSON.parse(raw);
+          return {
+              id: Date.now(),
+              name: product.name || 'Selected Product',
+              image: product.image || '',
+              price: Number(product.price) || 0,
+              category: product.category || '',
+              size: 'M',
+              qty: 1
+          };
+      } catch (e) {
+          return null;
+      }
+  }
   // --- INIT ---
   renderOrderItems();
   lucide.createIcons();

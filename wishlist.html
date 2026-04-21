@@ -17,6 +17,10 @@
         .product-card {
             transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             position: relative;
+            height: 100%;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
         }
         .product-img-wrap {
             overflow: hidden;
@@ -24,7 +28,8 @@
             background: #f0f0f0;
             border-radius: 3px;
             width: 100%;
-            height: 100%;
+            flex: 1;
+            min-height: 320px;
         }
         /* Masonry sizing */
         .product-card {
@@ -252,6 +257,24 @@
         .carousel-container::-webkit-scrollbar {
             display: none;
         }
+        @keyframes floatHero {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes linePulse {
+            0%, 100% { transform: scaleX(1); opacity: 0.2; }
+            50% { transform: scaleX(1.35); opacity: 0.5; }
+        }
+
+        .hero-motion {
+            animation: floatHero 3.5s ease-in-out infinite;
+        }
+
+        .hero-line-motion {
+            animation: linePulse 2.5s ease-in-out infinite;
+            transform-origin: center;
+        }
     </style>
     <style>body { box-sizing: border-box; }</style>
     <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
@@ -267,17 +290,17 @@
 
     <!-- Header - BLACK -->
     <header class="sticky top-0 z-50 bg-black border-b text-white" style="border-color:#333">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
             <a href="#" class="flex items-center gap-3">
-                <img src="pic/logo2.png" alt="logo" class="w-24 h-24 object-contain">
-            </a>
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="#" onclick="event.preventDefault()" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">New In</a>
-                <a href="#" onclick="event.preventDefault()" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Shop</a>
-                <a href="#" onclick="event.preventDefault()" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Collections</a>
-            </nav>
+                <img src="pic/logo1.jpeg" alt="logo" class="w-20 h-20 object-contain">
+            </a><nav class="hidden md:flex items-center gap-8">
+            <a href="home_2.html#collection" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">New In</a>
+            <a href="ORDER_2.html" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Shop</a>            <a href="new collection_2.html" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Collections</a>
+        </nav>
             <div class="flex items-center gap-5">
-                <button class="relative" aria-label="Search"><i data-lucide="search" style="width:20px;height:20px;color:#ddd"></i></button>
+                <button class="relative" aria-label="Search" onclick="toggleSearchBar()">
+                    <i data-lucide="search" style="width:20px;height:20px;color:#fff"></i>
+                </button>
                 <button class="relative" aria-label="Wishlist">
                     <i data-lucide="heart" style="width:20px;height:20px;color:#fff;fill:#fff"></i>
                     <span id="wishlist-count" class="absolute -top-2 -right-2 w-4 h-4 bg-white text-black rounded-full text-xs flex items-center justify-center font-sans" style="font-size:9px">10</span>
@@ -286,15 +309,30 @@
             </div>
         </div>
     </header>
+    <div id="search-bar" class="hidden bg-white px-6 py-4 border-b" style="border-color:#e5e5e5;">
+        <div class="max-w-7xl mx-auto flex items-center gap-3">
+            <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search by name or price..."
+                    class="w-full border px-4 py-3 text-sm outline-none"
+                    style="border-color:#ddd; color:#111;"
+                    oninput="filterAndSort()"
+            >
+            <button onclick="clearSearch()" class="px-4 py-3 text-xs tracking-widest uppercase border" style="border-color:#ddd; color:#111;">
+                Clear
+            </button>
+        </div>
+    </div>
 
     <!-- Hero Section -->
     <section class="py-16 md:py-20 text-center px-6">
-        <div class="fade-up fade-up-1">
+        <div class="hero-motion">
             <p class="text-xs tracking-widest uppercase mb-4" style="color:#aaa;letter-spacing:0.3em">♡ Wishlist</p>
             <h1 id="page-title" class="font-serif text-5xl md:text-6xl font-light mb-5" style="letter-spacing:0.02em">My Wishlist</h1>
             <p id="page-subtitle" class="text-sm tracking-wide max-w-md mx-auto" style="color:#888;letter-spacing:0.05em">Your favorite picks, saved for later</p>
         </div>
-        <div class="w-16 h-px bg-black mx-auto mt-8 opacity-20"></div>
+        <div class="w-16 h-px bg-black mx-auto mt-8 opacity-20 hero-line-motion"></div>
     </section>
 
     <!-- Filter Bar -->
@@ -334,6 +372,7 @@
     </main>
 
     <!-- You May Also Like - CAROUSEL with more images + left/right movement -->
+    <!-- You May Also Like - CAROUSEL with more images + left/right movement -->
     <section class="bg-neutral-50 py-20 px-6">
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between mb-8">
@@ -353,78 +392,68 @@
             </div>
 
             <div id="suggestions-carousel" class="carousel-container flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scrollbar-hide">
-                <!-- More cards (8 total) - will slide left/right -->
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#e0ddd8">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#b8b3aa">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Abaya.jpg" class="suggest-img w-full h-full object-cover" alt="Abaya">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Linen Midi Wrap</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$185</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Abaya</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$220</p>
                 </div>
+
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#d5d0ca">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#a8a29a">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Casual.jpg" class="suggest-img w-full h-full object-cover" alt="Casual Set">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Leather Tote Bag</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$320</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Casual Set</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$160</p>
                 </div>
+
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#ddd9d3">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#b5b0a8">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Formal.jpg" class="suggest-img w-full h-full object-cover" alt="Formal Look">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Pleated Wide Trousers</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Formal Look</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$260</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Overalls.jpg" class="suggest-img w-full h-full object-cover" alt="Overalls">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Overalls</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$175</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/SS.jpg" class="suggest-img w-full h-full object-cover" alt="Summer Style">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Summer Style</p>
                     <p class="font-sans text-xs mt-1" style="color:#aaa">$145</p>
                 </div>
+
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#ccc7c0">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#9e998f">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/SS1.jpg" class="suggest-img w-full h-full object-cover" alt="Soft Style">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Cropped Bouclé Jacket</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$275</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Soft Style</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$150</p>
                 </div>
+
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#e8e4df">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#c7c2b9">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/P1.jpg" class="suggest-img w-full h-full object-cover" alt="Classic Piece">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Silk Slip Dress</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$245</p>
-                </div>
-                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#d2cdc6">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#b8b3aa">✦</span>
-                        </div>
-                    </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Cashmere Cardigan</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$210</p>
-                </div>
-                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#dbd7d1">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#a8a29a">✦</span>
-                        </div>
-                    </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Denim Straight Jeans</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Classic Piece</p>
                     <p class="font-sans text-xs mt-1" style="color:#aaa">$130</p>
                 </div>
+
                 <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
-                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm" style="background:#c9c4bc">
-                        <div class="suggest-img w-full h-full flex items-center justify-center">
-                            <span class="font-serif text-4xl" style="color:#9e998f">✦</span>
-                        </div>
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/P2.jpg" class="suggest-img w-full h-full object-cover" alt="Modern Pick">
                     </div>
-                    <p class="font-sans text-xs tracking-wider" style="color:#555">Pearl Hoop Earrings</p>
-                    <p class="font-sans text-xs mt-1" style="color:#aaa">$65</p>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Modern Pick</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$155</p>
                 </div>
             </div>
         </div>
@@ -493,12 +522,18 @@
         { id: 7, name: "Tailored Wide Leg Pants", price: 165, category: "bottoms", image: "pic/jeans.jpg", added: "2025-04-14" },
         { id: 8, name: "High Waisted Denim Skirt", price: 135, category: "bottoms", image: "pic/Skirt.jpg", added: "2025-04-13" },
         { id: 9, name: "Structured Mini Bag", price: 380, category: "accessories", image: "pic/Bags.jpg", added: "2025-04-12" },
-        { id: 10, name: "Gold Chain Necklace", price: 95, category: "accessories", image: "pic/Necklace.jpg", added: "2025-04-11" }
+        { id: 10, name: "Gold Chain Necklace", price: 95, category: "accessories", image: "pic/Necklace.jpg", added: "2025-04-11" },
+        { id: 11, name: "Classic Dress", price: 245, category: "dresses", image: "pic/Dresses.jpg", added: "2025-04-20" },
+        { id: 12, name: "Daily Shirt", price: 120, category: "tops", image: "pic/Shirts.jpg", added: "2025-04-17" },
+        { id: 13, name: "Tailored Blazer", price: 280, category: "outerwear", image: "pic/Blazers.jpg", added: "2025-04-16" },
+        { id: 14, name: "Casual Vest", price: 140, category: "outerwear", image: "pic/Vests.jpg", added: "2025-04-15" },
+        { id: 15, name: "Wide Pants", price: 165, category: "bottoms", image: "pic/Pants.png", added: "2025-04-14" },
+        { id: 16, name: "Leather Belt", price: 85, category: "accessories", image: "pic/Belts.jpg", added: "2025-04-11" }
     ];
 
     function createCard(item, index) {
         const card = document.createElement('div');
-        card.className = `product-card fade-up fade-up-${(index % 6) + 1}`;
+        card.className = 'product-card';
         card.dataset.id = item.id;
 
         const gradients = [
@@ -525,8 +560,7 @@
             </div>
             <div class="overlay-content">
                 <div class="product-actions">
-                    <button class="action-btn" onclick="event.stopPropagation(); addToCart('${item.name}')">
-                        <i data-lucide="shopping-bag" style="width:14px;height:14px"></i>
+<button class="action-btn" onclick="event.stopPropagation(); goToOrder('${item.name}', '${item.image}', '${item.price}', '${item.category}')">                        <i data-lucide="shopping-bag" style="width:14px;height:14px"></i>
                         Add
                     </button>
                     <button class="action-btn" onclick="event.stopPropagation(); showToast('Added to compare')">
@@ -547,40 +581,87 @@
   `;
         return card;
     }
+    function toggleSearchBar() {
+        const bar = document.getElementById('search-bar');
+        bar.classList.toggle('hidden');
 
-    function renderGrid() {
-        const grid = document.getElementById('wishlist-grid');
-        const empty = document.getElementById('empty-state');
-        const filtered = getFilteredItems();
-        grid.innerHTML = '';
-        if (filtered.length === 0) {
-            grid.classList.add('hidden');
-            empty.classList.remove('hidden');
-        } else {
-            grid.classList.remove('hidden');
-            empty.classList.add('hidden');
-            filtered.forEach((item, i) => grid.appendChild(createCard(item, i)));
+        if (!bar.classList.contains('hidden')) {
+            document.getElementById('search-input').focus();
         }
-        document.getElementById('items-count').textContent = wishlistItems.length;
-        document.getElementById('wishlist-count').textContent = wishlistItems.length;
-        lucide.createIcons();
     }
 
+    function clearSearch() {
+        const input = document.getElementById('search-input');
+        input.value = '';
+        filterAndSort();
+    }
+    function renderGrid(itemsToRender = null) {
+        const grid = document.getElementById('wishlist-grid');
+        const empty = document.getElementById('empty-state');
+
+        const filtered = itemsToRender || getFilteredItems();
+
+        grid.innerHTML = '';
+
+        if (!filtered || filtered.length === 0) {
+            grid.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        grid.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        filtered.forEach((item, i) => {
+            const card = createCard(item, i);
+            grid.appendChild(card);
+        });
+
+        document.getElementById('items-count').textContent = filtered.length;
+        document.getElementById('wishlist-count').textContent = wishlistItems.length;
+
+        lucide.createIcons();
+    }
     function getFilteredItems() {
-        const cat = document.getElementById('filter-category').value;
-        const sort = document.getElementById('sort-by').value;
-        let items = cat === 'all' ? [...wishlistItems] : wishlistItems.filter(i => i.category === cat);
+        const filterElement = document.getElementById('filter-category');
+        const sortElement = document.getElementById('sort-by');
+        const searchElement = document.getElementById('search-input');
+
+        const cat = filterElement ? filterElement.value || 'all' : 'all';
+        const sort = sortElement ? sortElement.value || 'newest' : 'newest';
+        const search = searchElement ? searchElement.value.trim().toLowerCase() : '';
+
+        let items = cat === 'all'
+            ? [...wishlistItems]
+            : wishlistItems.filter(i => i.category === cat);
+
+        if (search) {
+            items = items.filter(i => {
+                const nameMatch = i.name.toLowerCase().includes(search);
+                const priceMatch = String(i.price).includes(search);
+                return nameMatch || priceMatch;
+            });
+        }
 
         if (sort === 'price-low') items.sort((a, b) => a.price - b.price);
         else if (sort === 'price-high') items.sort((a, b) => b.price - a.price);
         else if (sort === 'name') items.sort((a, b) => a.name.localeCompare(b.name));
-        else items.sort((a, b) => new Date(b.added) - new Date(a.added)); // newest
+        else items.sort((a, b) => new Date(b.added) - new Date(a.added));
 
         return items;
     }
 
     function filterAndSort() { renderGrid(); }
+    function goToOrder(name, image, price, category) {
+        localStorage.setItem('selectedProduct', JSON.stringify({
+            name,
+            image,
+            price,
+            category
+        }));
 
+        window.location.href = 'order.html';
+    }
     function removeItem(id) {
         const card = document.querySelector(`[data-id="${id}"]`);
         if (card) {
@@ -649,48 +730,57 @@
         document.getElementById('page-subtitle').style.color = c.secondary_action_color;
     }
 
-    window.elementSdk.init({
-        defaultConfig,
-        onConfigChange: applyConfig,
-        mapToCapabilities: (config) => {
-            const c = { ...defaultConfig, ...config };
-            const makeColor = (key) => ({
-                get: () => c[key] || defaultConfig[key],
-                set: (v) => { c[key] = v; window.elementSdk.setConfig({ [key]: v }); }
-            });
-            return {
-                recolorables: [
-                    makeColor('background_color'),
-                    makeColor('surface_color'),
-                    makeColor('text_color'),
-                    makeColor('primary_action_color'),
-                    makeColor('secondary_action_color')
-                ],
-                borderables: [],
-                fontEditable: {
-                    get: () => c.font_family || defaultConfig.font_family,
-                    set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+    document.addEventListener('DOMContentLoaded', () => {
+        const filter = document.getElementById('filter-category');
+        const sort = document.getElementById('sort-by');
+
+        if (filter) filter.value = 'all';
+        if (sort) sort.value = 'newest';
+
+        renderGrid(wishlistItems);
+        lucide.createIcons();
+
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange: applyConfig,
+                mapToCapabilities: (config) => {
+                    const c = { ...defaultConfig, ...config };
+                    const makeColor = (key) => ({
+                        get: () => c[key] || defaultConfig[key],
+                        set: (v) => { c[key] = v; window.elementSdk.setConfig({ [key]: v }); }
+                    });
+                    return {
+                        recolorables: [
+                            makeColor('background_color'),
+                            makeColor('surface_color'),
+                            makeColor('text_color'),
+                            makeColor('primary_action_color'),
+                            makeColor('secondary_action_color')
+                        ],
+                        borderables: [],
+                        fontEditable: {
+                            get: () => c.font_family || defaultConfig.font_family,
+                            set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+                        },
+                        fontSizeable: {
+                            get: () => c.font_size || defaultConfig.font_size,
+                            set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+                        }
+                    };
                 },
-                fontSizeable: {
-                    get: () => c.font_size || defaultConfig.font_size,
-                    set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+                mapToEditPanelValues: (config) => {
+                    const c = { ...defaultConfig, ...config };
+                    return new Map([
+                        ['page_title', c.page_title],
+                        ['page_subtitle', c.page_subtitle],
+                        ['suggestion_title', c.suggestion_title],
+                        ['footer_about', c.footer_about]
+                    ]);
                 }
-            };
-        },
-        mapToEditPanelValues: (config) => {
-            const c = { ...defaultConfig, ...config };
-            return new Map([
-                ['page_title', c.page_title],
-                ['page_subtitle', c.page_subtitle],
-                ['suggestion_title', c.suggestion_title],
-                ['footer_about', c.footer_about]
-            ]);
+            });
         }
     });
-
-    // Initial render - All Categories will be shown by default
-    renderGrid();
-    lucide.createIcons();
 </script>
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eee6cc5e218997d',t:'MTc3NjYyODA4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
