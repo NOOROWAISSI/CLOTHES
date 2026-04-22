@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demoiselle — My Profile</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; margin: 0; }
+        * { box-sizing: border-box; }
+
+        .font-serif { font-family: 'Cormorant Garamond', serif; }
+        .font-sans { font-family: 'Outfit', sans-serif; }
+
+        .profile-bg {
+            background: linear-gradient(135deg, #f8f8f8 0%, #f2f2f2 100%);
+        }
+
+        .card-soft {
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 18px 40px rgba(0,0,0,0.06);
+            border-radius: 24px;
+        }
+
+        .input-clean {
+            width: 100%;
+            border: 1px solid #e5e5e5;
+            background: #fff;
+            border-radius: 16px;
+            padding: 14px 16px;
+            font-size: 15px;
+            color: #111;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-clean:focus {
+            border-color: #000;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        }
+
+        .label-mini {
+            display: block;
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 8px;
+        }
+
+        .btn-dark {
+            background: #000;
+            color: #fff;
+            border: 1px solid #000;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .btn-dark:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .btn-light {
+            background: #fff;
+            color: #000;
+            border: 1px solid #ddd;
+            border-radius: 16px;
+            padding: 14px 18px;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+
+        .btn-light:hover {
+            border-color: #000;
+        }
+
+        .order-card {
+            border: 1px solid #eee;
+            border-radius: 20px;
+            background: #fff;
+            transition: all 0.3s ease;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.05);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 100;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="profile-bg font-sans text-black">
+
+<div class="min-h-screen">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-black border-b border-white/10">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="home_2.html" class="flex items-center gap-3">
+                <img src="pic/logo1.jpeg" alt="Demoiselle" class="w-20 h-20 object-contain">
+            </a>
+
+            <div class="flex items-center gap-3">
+                <a href="home_2.html" class="btn-light">Home</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <div class="bg-black text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-2 text-sm">
+            <i data-lucide="check" style="width:16px;height:16px"></i>
+            <span id="toast-msg">Saved successfully</span>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <main class="max-w-7xl mx-auto px-6 py-10">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Left Column -->
+            <section class="lg:col-span-1">
+                <div class="card-soft p-8">
+                    <div class="flex flex-col items-center text-center mb-8">
+                        <div class="w-24 h-24 rounded-full bg-black text-white flex items-center justify-center mb-4">
+                            <i data-lucide="user" style="width:34px;height:34px"></i>
+                        </div>
+                        <h1 id="profile-name-display" class="font-serif text-4xl font-light">My Profile</h1>
+                        <p id="profile-email-display" class="text-sm text-gray-500 mt-2">your@email.com</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="rounded-2xl bg-[#fafafa] p-4 border border-black/5">
+                            <p class="text-xs uppercase tracking-[0.25em] text-gray-400 mb-2">Account created</p>
+                            <p id="profile-createdAt" class="text-sm text-black/70">—</p>
+                        </div>
+
+                        <div class="rounded-2xl bg-[#fafafa] p-4 border border-black/5">
+                            <p class="text-xs uppercase tracking-[0.25em] text-gray-400 mb-2">Total Orders</p>
+                            <p id="profile-orders-count" class="text-2xl font-serif">0</p>
+                        </div>
+
+                        <div class="rounded-2xl bg-[#fafafa] p-4 border border-black/5">
+                            <p class="text-xs uppercase tracking-[0.25em] text-gray-400 mb-2">Total Spent</p>
+                            <p id="profile-total-spent" class="text-2xl font-serif">$0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Column -->
+            <section class="lg:col-span-2 space-y-8">
+
+                <!-- Edit Profile -->
+                <div class="card-soft p-8">
+                    <div class="mb-8">
+                        <p class="text-xs uppercase tracking-[0.25em] text-gray-400 mb-2">Personal Information</p>
+                        <h2 class="font-serif text-4xl font-light">Edit Profile</h2>
+                    </div>
+
+                    <form id="profile-form" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="label-mini">First Name</label>
+                                <input id="first-name" type="text" class="input-clean" placeholder="First name">
+                            </div>
+                            <div>
+                                <label class="label-mini">Last Name</label>
+                                <input id="last-name" type="text" class="input-clean" placeholder="Last name">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="label-mini">Email Address</label>
+                            <input id="email" type="email" class="input-clean" placeholder="your@email.com">
+                        </div>
+
+                        <div>
+                            <label class="label-mini">Phone Number</label>
+                            <input id="phone" type="text" class="input-clean" placeholder="+970 59X XXX XXX">
+                        </div>
+
+                        <div>
+                            <label class="label-mini">Address</label>
+                            <input id="address" type="text" class="input-clean" placeholder="City, Street, Building">
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                            <button type="submit" class="btn-dark">Save Changes</button>
+                            <button type="button" class="btn-light" onclick="resetProfileForm()">Reset</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Order History -->
+                <div class="card-soft p-8">
+                    <div class="mb-8 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs uppercase tracking-[0.25em] text-gray-400 mb-2">Purchase History</p>
+                            <h2 class="font-serif text-4xl font-light">My Orders</h2>
+                        </div>
+
+                        <button type="button" class="btn-light" onclick="seedDemoOrders()">
+                            Demo Orders
+                        </button>
+                    </div>
+
+                    <div id="orders-list" class="space-y-4">
+                        <!-- Orders render here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<script>
+    const USER_KEY = 'demo_user';
+    const ORDERS_KEY = 'demo_orders';
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '—';
+        const date = new Date(dateString);
+        if (isNaN(date)) return '—';
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    }
+
+    function getUser() {
+        try {
+            return JSON.parse(localStorage.getItem(USER_KEY)) || null;
+        } catch {
+            return null;
+        }
+    }
+
+    function saveUser(user) {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+
+    function getOrders() {
+        try {
+            return JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveOrders(orders) {
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    }
+
+    function calculateTotalSpent(orders) {
+        return orders.reduce((sum, order) => sum + (Number(order.total) || 0), 0);
+    }
+
+    function fillProfileForm() {
+        const user = getUser() || {
+            firstName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            address: '',
+            createdAt: new Date().toISOString()
+        };
+
+        document.getElementById('first-name').value = user.firstName || '';
+        document.getElementById('last-name').value = user.lastName || '';
+        document.getElementById('email').value = user.email || '';
+        document.getElementById('phone').value = user.phone || '';
+        document.getElementById('address').value = user.address || '';
+
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        document.getElementById('profile-name-display').textContent = fullName || 'My Profile';
+        document.getElementById('profile-email-display').textContent = user.email || 'your@email.com';
+        document.getElementById('profile-createdAt').textContent = formatDate(user.createdAt);
+    }
+
+    function resetProfileForm() {
+        fillProfileForm();
+        showToast('Profile reset');
+    }
+
+    function renderOrders() {
+        const orders = getOrders();
+        const list = document.getElementById('orders-list');
+        const ordersCount = document.getElementById('profile-orders-count');
+        const totalSpent = document.getElementById('profile-total-spent');
+
+        ordersCount.textContent = orders.length;
+        totalSpent.textContent = `$${calculateTotalSpent(orders).toFixed(2)}`;
+
+        if (!orders.length) {
+            list.innerHTML = `
+                <div class="text-center py-14 border border-dashed border-black/10 rounded-3xl bg-[#fcfcfc]">
+                    <i data-lucide="shopping-bag" style="width:36px;height:36px" class="mx-auto text-gray-300"></i>
+                    <p class="mt-4 text-lg font-serif">No orders yet</p>
+                    <p class="mt-2 text-sm text-gray-500">Your completed purchases will appear here.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        list.innerHTML = orders.map(order => `
+            <div class="order-card p-5">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.22em] text-gray-400 mb-2">Order Number</p>
+                        <p class="text-base font-medium">${order.orderNumber || '—'}</p>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <p class="text-xs uppercase tracking-[0.22em] text-gray-400 mb-2">Date</p>
+                        <p class="text-sm text-black/70">${formatDate(order.date)}</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 mb-4">
+                    ${(order.items || []).map(item => `
+                        <div class="flex items-center justify-between text-sm border-b border-black/5 pb-2">
+                            <span>${item.name} × ${item.qty}</span>
+                            <span>$${(Number(item.price) * Number(item.qty)).toFixed(2)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                        <i data-lucide="truck" style="width:16px;height:16px"></i>
+                        <span>${order.delivery || 'Standard Delivery'}</span>
+                    </div>
+                    <div class="text-lg font-serif">$${Number(order.total || 0).toFixed(2)}</div>
+                </div>
+            </div>
+        `).join('');
+
+        lucide.createIcons();
+    }
+
+    function seedDemoOrders() {
+        const demoOrders = [
+            {
+                orderNumber: 'DM-2026-00127',
+                date: '2026-04-10T12:00:00Z',
+                delivery: 'Standard Delivery',
+                total: 189.00,
+                items: [
+                    { name: 'Oversized Wool Coat', qty: 1, price: 189.00 }
+                ]
+            },
+            {
+                orderNumber: 'DM-2026-00131',
+                date: '2026-04-16T12:00:00Z',
+                delivery: 'Express Delivery',
+                total: 233.00,
+                items: [
+                    { name: 'Silk Drape Blouse', qty: 1, price: 78.00 },
+                    { name: 'Tailored Linen Trousers', qty: 1, price: 112.00 },
+                    { name: 'Delivery', qty: 1, price: 43.00 }
+                ]
+            }
+        ];
+
+        saveOrders(demoOrders);
+        renderOrders();
+        showToast('Demo orders added');
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const existingUser = getUser() || {};
+        const updatedUser = {
+            ...existingUser,
+            firstName: document.getElementById('first-name').value.trim(),
+            lastName: document.getElementById('last-name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            address: document.getElementById('address').value.trim(),
+            createdAt: existingUser.createdAt || new Date().toISOString()
+        };
+
+        saveUser(updatedUser);
+        fillProfileForm();
+        showToast('Profile updated successfully');
+    });
+
+    fillProfileForm();
+    renderOrders();
+    lucide.createIcons();
+</script>
+
+</body>
+</html>

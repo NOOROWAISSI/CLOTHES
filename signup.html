@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demoiselle — Create Account</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&amp;family=Outfit:wght@200;300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <style>
+        html, body { height: 100%; margin: 0; }
+        .font-serif { font-family: 'Cormorant Garamond', serif; }
+        .font-sans { font-family: 'Outfit', sans-serif; }
+
+        .signup-bg {
+            background-image: url('pic/signupback.png'); /* الصورة اللي ارسلتها */
+            background-size: cover;
+            background-position: center 40%;
+            background-attachment: fixed;
+        }
+
+        .overlay {
+            background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75));
+        }
+
+        .form-card {
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+        }
+        .vertical-brand-left {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            letter-spacing: 10px;
+            color: rgba(255,255,255,0.28);
+        }
+
+        .vertical-brand-right {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 42px;
+            letter-spacing: 10px;
+            color: rgba(255,255,255,0.18); /* أخف */
+        }
+    </style>
+</head>
+<body class="signup-bg font-sans">
+
+<div class="min-h-screen flex items-center justify-center relative overlay">
+
+    <!-- Logo في الأعلى (كرييتف) -->
+    <div class="absolute right-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col items-center">
+        <span class="vertical-brand-right">DEMOISELLE</span>
+        <div class="w-px h-24 bg-white/20 mt-4"></div>
+    </div>
+    <div class="absolute left-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col items-center">
+        <span class="vertical-brand-left">DEMOISELLE</span>
+        <div class="w-px h-24 bg-white/20 mt-4"></div>
+    </div>
+    <!-- الـ Form -->
+    <div class="form-card w-full max-w-md mx-6 p-10">
+        <div class="text-center mb-8">
+            <h1 class="font-serif text-5xl font-light text-black">Create Account</h1>
+            <p class="text-gray-600 mt-3">Join Demoiselle and enjoy timeless elegance</p>
+        </div>
+
+        <form id="signup-form" class="space-y-6">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">First Name</label>
+                    <input id="first-name" type="text" required class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg" placeholder="Sarah">
+                </div>
+                <div>
+                    <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Last Name</label>
+                    <input id="last-name" type="text" required class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg" placeholder="Al-Masri">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Email Address</label>
+                <input id="email" type="email" required class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg" placeholder="your@email.com">
+            </div>
+
+            <div>
+                <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Password</label>
+                <div class="relative">
+                    <input id="password" type="password" required class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg" placeholder="••••••••">
+                    <button type="button" onclick="togglePassword()" class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
+                        <i id="eyeIcon" data-lucide="eye" style="width:20px;height:20px"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-black text-white py-5 rounded-2xl text-sm tracking-widest font-medium hover:bg-gray-900 transition-all">
+                CREATE ACCOUNT
+            </button>
+        </form>
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Already have an account?
+            <a href="signIn.html" class="text-black font-medium hover:underline">Log in</a>
+        </p>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="bg-white rounded-3xl max-w-md w-full mx-4 p-10 text-center">
+            <div class="mx-auto w-20 h-20 bg-green-100 rounded-3xl flex items-center justify-center mb-6">
+                <i data-lucide="mail-check" class="w-10 h-10 text-green-600"></i>
+            </div>
+            <h2 class="text-3xl font-light">Account Created Successfully!</h2>
+            <p class="text-gray-600 mt-4 mb-8">A confirmation email has been sent to <span id="user-email" class="font-semibold"></span></p>
+            <button onclick="goToHome()" class="w-full bg-black text-white py-5 rounded-2xl text-sm tracking-widest">CONTINUE TO HOMEPAGE</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword() {
+        const input = document.getElementById("password");
+        const icon = document.getElementById("eyeIcon");
+
+        if (input.type === "password") {
+            input.type = "text";
+            icon.setAttribute("data-lucide", "eye-off");
+        } else {
+            input.type = "password";
+            icon.setAttribute("data-lucide", "eye");
+        }
+
+        lucide.createIcons();
+    }
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+
+        const userData = {
+            firstName: document.getElementById('first-name').value,
+            lastName: document.getElementById('last-name').value,
+            email: email,
+            createdAt: new Date().toISOString()
+        };
+
+        console.log('✅ User Registered:', userData);
+        localStorage.setItem('demo_user', JSON.stringify(userData));
+
+        document.getElementById('user-email').textContent = email;
+        document.getElementById('success-modal').classList.remove('hidden');
+    });
+
+    function goToHome() {
+        window.location.href = "home_2.html"; // غير الاسم إذا لزم الأمر
+    }
+
+    lucide.createIcons();
+</script>
+</body>
+</html>
