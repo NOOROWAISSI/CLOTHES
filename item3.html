@@ -120,14 +120,17 @@
             position: absolute;
             left: 50%;
             transform: translateX(-50%);
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 30px;
-            letter-spacing: 0.38em;
-            font-weight: 300;
-            color: var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             white-space: nowrap;
-            text-transform: uppercase;
             line-height: 1;
+        }
+
+        .brand-logo {
+            width: 90px;
+            height: 90px;
+            object-fit: contain;
         }
 
         .icon-btn {
@@ -207,6 +210,30 @@
             transform-origin: center center;
             user-select: none;
             pointer-events: none;
+        }
+
+        /* ===== Circular logo on product images ===== */
+        .product-logo-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: rgba(255,255,255,0.95);
+            border: 2px solid #ffffff;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.14);
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-logo-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .thumb-row {
@@ -842,9 +869,9 @@
                 padding: 16px 14px;
             }
 
-            .brand {
-                font-size: 20px;
-                letter-spacing: 0.25em;
+            .brand-logo {
+                width: 62px;
+                height: 62px;
             }
 
             .header-left,
@@ -879,6 +906,13 @@
                 flex-direction: column;
                 align-items: stretch;
             }
+
+            .product-logo-badge {
+                width: 58px;
+                height: 58px;
+                top: 12px;
+                right: 12px;
+            }
         }
     </style>
 </head>
@@ -908,7 +942,10 @@
                 </button>
             </div>
 
-            <div class="brand">NOIR ATELIER</div>
+            <div class="brand">
+                <!-- GOOGLE: put your HEADER LOGO image path here -->
+                <img src="pic/logo%20.jpeg" alt="Brand Logo" class="brand-logo">
+            </div>
 
             <div class="header-right">
                 <button class="icon-btn" id="header-heart" aria-label="Wishlist">
@@ -930,6 +967,11 @@
             <div class="gallery-col">
                 <div class="main-image-wrap" id="zoom-area">
                     <img id="main-image" class="main-image" alt="Selected product">
+
+                    <!-- GOOGLE: put your ROUND LOGO image path here -->
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
                 </div>
 
                 <div class="thumb-row" id="thumb-row"></div>
@@ -1029,6 +1071,12 @@
             <div class="recommend-grid" id="recommended-grid">
                 <article class="rec-card large reveal-item">
                     <img src="" alt="Classic Blazer" data-img="0">
+
+                    <!-- GOOGLE: same round logo on product cards -->
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
+
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Classic Blazer</div>
@@ -1039,6 +1087,11 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Soft White Shirt" data-img="1">
+
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
+
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">White Shirt</div>
@@ -1049,6 +1102,11 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Wool Trousers" data-img="2">
+
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
+
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Wool Trousers</div>
@@ -1059,6 +1117,11 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Silk Camisole" data-img="3">
+
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
+
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Silk Camisole</div>
@@ -1069,6 +1132,11 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Cashmere Scarf" data-img="4">
+
+                    <div class="product-logo-badge">
+                        <img src="pic/logo2.png" alt="Round Logo">
+                    </div>
+
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Cashmere Scarf</div>
@@ -1097,7 +1165,7 @@
             <div class="footer-grid">
                 <div>
                     <div class="footer-title">Brand</div>
-                    <div class="footer-brand">NOIR ATELIER</div>
+                    <div class="footer-brand">DEMOISELLE</div>
                     <p class="footer-text">
                         A fashion concept built around black and white contrast,
                         editorial styling, and sharp timeless silhouettes.
@@ -1107,9 +1175,9 @@
                 <div>
                     <div class="footer-title">Contact</div>
                     <div class="footer-links">
-                        <a href="#">hello@noiratelier.com</a>
-                        <a href="#">+1 (555) 000-0000</a>
-                        <a href="#">New York</a>
+                        <a href="#">DEMOISELLE@gmail.com</a>
+                        <a href="#">+970-594470265</a>
+                        <a href="#">Palestine-Nablus</a>
                     </div>
                 </div>
 
@@ -1117,13 +1185,13 @@
                     <div class="footer-title">Follow</div>
                     <div class="footer-links">
                         <a href="#">Instagram</a>
-                        <a href="#">Pinterest</a>
+
                         <a href="#">TikTok</a>
                     </div>
                 </div>
             </div>
 
-            <div class="copyright">© 2025 Noir Atelier. All rights reserved.</div>
+            <div class="copyright">© 2025 DEMOISELLE. All rights reserved.</div>
         </div>
     </footer>
 
@@ -1161,65 +1229,33 @@
 </div>
 
 <script>
-    function svgData(label, bg, body, accent, type) {
-        let shape = '';
-
-        if (type === 'front') {
-            shape = `
-          <circle cx="300" cy="95" r="36" fill="${accent}" opacity="0.9"/>
-          <rect x="190" y="150" width="220" height="365" rx="14" fill="${body}"/>
-          <rect x="225" y="180" width="150" height="58" rx="10" fill="${accent}" opacity="0.35"/>
-          <rect x="198" y="515" width="92" height="180" rx="12" fill="${body}" opacity="0.96"/>
-          <rect x="310" y="515" width="92" height="180" rx="12" fill="${body}" opacity="0.96"/>
-        `;
-        } else if (type === 'back') {
-            shape = `
-          <circle cx="300" cy="95" r="36" fill="${accent}" opacity="0.9"/>
-          <rect x="185" y="150" width="230" height="370" rx="16" fill="${body}"/>
-          <rect x="218" y="525" width="78" height="176" rx="12" fill="${body}" opacity="0.96"/>
-          <rect x="304" y="525" width="78" height="176" rx="12" fill="${body}" opacity="0.96"/>
-        `;
-        } else if (type === 'detail') {
-            shape = `
-          <rect x="120" y="210" width="360" height="250" rx="16" fill="${body}"/>
-          <rect x="150" y="250" width="300" height="44" rx="10" fill="${accent}" opacity="0.4"/>
-          <rect x="150" y="320" width="180" height="90" rx="10" fill="${accent}" opacity="0.2"/>
-        `;
-        } else if (type === 'styled') {
-            shape = `
-          <circle cx="300" cy="90" r="34" fill="${accent}" opacity="0.9"/>
-          <rect x="170" y="140" width="260" height="400" rx="18" fill="${body}"/>
-          <rect x="225" y="205" width="145" height="74" rx="12" fill="${accent}" opacity="0.28"/>
-          <rect x="185" y="545" width="102" height="170" rx="12" fill="${body}" opacity="0.95"/>
-          <rect x="315" y="545" width="102" height="170" rx="12" fill="${body}" opacity="0.95"/>
-        `;
-        } else {
-            shape = `<rect x="170" y="140" width="260" height="430" rx="18" fill="${body}"/>`;
-        }
-
-        const svg = `
-        <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 800'>
-          <rect width='600' height='800' fill='${bg}'/>
-          ${shape}
-          <text x='300' y='760' text-anchor='middle' font-family='Arial' font-size='16' fill='#8c8c8c' letter-spacing='4'>${label}</text>
-        </svg>
-      `;
-        return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-    }
-
+    /*
+      GOOGLE:
+      Put your PRODUCT images from your project here.
+      Example:
+      "pic/product1.jpg"
+      "pic/product2.jpg"
+      "pic/product3.jpg"
+      "pic/product4.jpg"
+    */
     const productImages = [
-        svgData('FRONT VIEW', '#efefef', '#1b1b1b', '#d9d9d9', 'front'),
-        svgData('BACK VIEW', '#f5f5f5', '#2a2a2a', '#dedede', 'back'),
-        svgData('FABRIC DETAIL', '#eeeeee', '#222222', '#ffffff', 'detail'),
-        svgData('STYLED LOOK', '#f0f0f0', '#111111', '#d7d7d7', 'styled')
+        "pic/jeana.jpg",
+        "pic/jeana.jpg",
+        "pic/product3.jpg",
+        "pic/product4.jpg"
     ];
 
+    /*
+      GOOGLE:
+      Put your RECOMMENDED product images here.
+      You can change them to any images inside your project folder.
+    */
     const recImages = [
-        svgData('BLAZER', '#ececec', '#1d1d1d', '#dcdcdc', 'front'),
-        svgData('WHITE SHIRT', '#f5f5f5', '#d8d8d8', '#a9a9a9', 'front'),
-        svgData('TROUSERS', '#ededed', '#4a4a4a', '#d8d8d8', 'detail'),
-        svgData('SILK CAMISOLE', '#f2f2f2', '#cfcfcf', '#999999', 'detail'),
-        svgData('SCARF', '#efefef', '#5a5a5a', '#cfcfcf', 'detail')
+        "pic/rec1.jpg",
+        "pic/rec2.jpg",
+        "pic/rec3.jpg",
+        "pic/rec4.jpg",
+        "pic/rec5.jpg"
     ];
 
     const mainImage = document.getElementById('main-image');
@@ -1267,7 +1303,9 @@
     renderThumbs();
 
     document.querySelectorAll('.rec-card img').forEach((img, index) => {
-        img.src = recImages[index];
+        if (recImages[index]) {
+            img.src = recImages[index];
+        }
     });
 
     const zoomArea = document.getElementById('zoom-area');
