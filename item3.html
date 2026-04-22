@@ -212,7 +212,6 @@
             pointer-events: none;
         }
 
-        /* ===== Circular logo on product images ===== */
         .product-logo-badge {
             position: absolute;
             top: 18px;
@@ -943,8 +942,8 @@
             </div>
 
             <div class="brand">
-                <!-- GOOGLE: put your HEADER LOGO image path here -->
-                <img src="pic/logo%20.jpeg" alt="Brand Logo" class="brand-logo">
+                <img src="./pic/logo.jpeg" alt="Brand Logo" class="brand-logo"
+                     onerror="this.src='https://via.placeholder.com/140x140?text=Logo'">
             </div>
 
             <div class="header-right">
@@ -968,9 +967,9 @@
                 <div class="main-image-wrap" id="zoom-area">
                     <img id="main-image" class="main-image" alt="Selected product">
 
-                    <!-- GOOGLE: put your ROUND LOGO image path here -->
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
                 </div>
 
@@ -1071,12 +1070,10 @@
             <div class="recommend-grid" id="recommended-grid">
                 <article class="rec-card large reveal-item">
                     <img src="" alt="Classic Blazer" data-img="0">
-
-                    <!-- GOOGLE: same round logo on product cards -->
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
-
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Classic Blazer</div>
@@ -1087,11 +1084,10 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Soft White Shirt" data-img="1">
-
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
-
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">White Shirt</div>
@@ -1102,11 +1098,10 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Wool Trousers" data-img="2">
-
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
-
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Wool Trousers</div>
@@ -1117,11 +1112,10 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Silk Camisole" data-img="3">
-
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
-
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Silk Camisole</div>
@@ -1132,11 +1126,10 @@
 
                 <article class="rec-card reveal-item">
                     <img src="" alt="Cashmere Scarf" data-img="4">
-
                     <div class="product-logo-badge">
-                        <img src="pic/logo2.png" alt="Round Logo">
+                        <img src="./pic/logo2.png" alt="Round Logo"
+                             onerror="this.src='https://via.placeholder.com/100x100?text=Logo'">
                     </div>
-
                     <div class="rec-overlay">
                         <div class="rec-text">
                             <div class="rec-name">Cashmere Scarf</div>
@@ -1185,7 +1178,6 @@
                     <div class="footer-title">Follow</div>
                     <div class="footer-links">
                         <a href="#">Instagram</a>
-
                         <a href="#">TikTok</a>
                     </div>
                 </div>
@@ -1230,32 +1222,40 @@
 
 <script>
     /*
-      GOOGLE:
-      Put your PRODUCT images from your project here.
-      Example:
-      "pic/product1.jpg"
-      "pic/product2.jpg"
-      "pic/product3.jpg"
-      "pic/product4.jpg"
+      مهم:
+      لازم يكون عندك فولدر اسمه pic
+      ويكون item.html برا الفولدر مباشرة
+
+      مثال:
+      project/
+      ├── item.html
+      └── pic/
+          ├── logo.jpeg
+          ├── logo2.png
+          ├── jeana.jpg
+          ├── jeanb.jpg
+          ├── jeanc.jpg
+          ├── jeand.jpg
+          ├── rec1.jpg
+          ├── rec2.jpg
+          ├── rec3.jpg
+          ├── rec4.jpg
+          └── rec5.jpg
     */
+
     const productImages = [
-        "pic/jeana.jpg",
-        "pic/jeana.jpg",
-        "pic/product3.jpg",
-        "pic/product4.jpg"
+        "./pic/jeana.jpg",
+        "./pic/jeanb.jpg",
+        "./pic/jeanc.jpg",
+        "./pic/jeand.jpg"
     ];
 
-    /*
-      GOOGLE:
-      Put your RECOMMENDED product images here.
-      You can change them to any images inside your project folder.
-    */
     const recImages = [
-        "pic/rec1.jpg",
-        "pic/rec2.jpg",
-        "pic/rec3.jpg",
-        "pic/rec4.jpg",
-        "pic/rec5.jpg"
+        "./pic/rec1.jpg",
+        "./pic/rec2.jpg",
+        "./pic/rec3.jpg",
+        "./pic/rec4.jpg",
+        "./pic/rec5.jpg"
     ];
 
     const mainImage = document.getElementById('main-image');
@@ -1279,17 +1279,33 @@
     let cartAdded = false;
     let liked = false;
 
+    function setFallbackImage(img, width = 600, height = 800, text = 'Image') {
+        img.onerror = null;
+        img.src = `https://via.placeholder.com/${width}x${height}?text=${encodeURIComponent(text)}`;
+    }
+
     function renderThumbs() {
         thumbRow.innerHTML = '';
+
         productImages.forEach((src, index) => {
             const div = document.createElement('div');
             div.className = 'thumb' + (index === currentImageIndex ? ' active' : '');
-            div.innerHTML = `<img src="${src}" alt="Thumbnail ${index + 1}">`;
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = `Thumbnail ${index + 1}`;
+            img.onerror = function () {
+                setFallbackImage(this, 300, 300, 'No Image');
+            };
+
+            div.appendChild(img);
+
             div.addEventListener('click', () => {
                 currentImageIndex = index;
                 updateMainImage();
                 renderThumbs();
             });
+
             thumbRow.appendChild(div);
         });
     }
@@ -1297,6 +1313,14 @@
     function updateMainImage() {
         mainImage.src = productImages[currentImageIndex];
         stickyImage.src = productImages[currentImageIndex];
+
+        mainImage.onerror = function () {
+            setFallbackImage(this, 700, 900, 'Main Image');
+        };
+
+        stickyImage.onerror = function () {
+            setFallbackImage(this, 200, 200, 'Mini');
+        };
     }
 
     updateMainImage();
@@ -1305,10 +1329,14 @@
     document.querySelectorAll('.rec-card img').forEach((img, index) => {
         if (recImages[index]) {
             img.src = recImages[index];
+            img.onerror = function () {
+                setFallbackImage(this, 500, 600, 'Recommended');
+            };
         }
     });
 
     const zoomArea = document.getElementById('zoom-area');
+
     zoomArea.addEventListener('mousemove', (e) => {
         const rect = zoomArea.getBoundingClientRect();
         const x = ((e.clientX - rect.left) / rect.width) * 100;
