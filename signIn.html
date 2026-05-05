@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demoiselle — Sign In</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+
+        .fashion-grid {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            height: 100%;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .fashion-grid { grid-template-columns: 1fr; }
+            .visual-side { display: none; }
+        }
+
+        .visual-side {
+            position: relative;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .geo-line {
+            position: absolute;
+            background: rgba(255,255,255,0.08);
+            z-index: 1;
+        }
+
+        .diagonal-stripe {
+            position: absolute;
+            width: 200%;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+            transform-origin: 0 0;
+            z-index: 1;
+        }
+
+        .model-container {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+
+        .model-img {
+            position: relative;
+            height: 90%;
+            max-width: 95%;
+            object-fit: contain;
+            z-index: 3;
+            animation: modelFadeIn 1.2s ease forwards;
+        }
+
+        @keyframes modelFadeIn {
+            from { opacity: 0; transform: translateY(30px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .big-brand {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 180px;
+            font-weight: 400;
+            line-height: 0.78;
+            letter-spacing: 8px;
+            color: rgba(255,255,255,0.10);
+            text-align: center;
+            z-index: 2;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .editorial-text {
+            position: absolute;
+            bottom: 60px;
+            left: 40px;
+            right: 40px;
+            z-index: 4;
+        }
+
+        .editorial-year {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 200;
+            font-size: 11px;
+            letter-spacing: 6px;
+            color: rgba(255,255,255,0.45);
+            text-transform: uppercase;
+        }
+
+        .editorial-headline {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 300;
+            font-style: italic;
+            font-size: 38px;
+            color: #fff;
+            line-height: 1.05;
+            margin-top: 8px;
+        }
+
+        /* 🔥 تعديل الجهة اليمين (المهم) */
+        .form-side {
+            background: linear-gradient(180deg, #ffffff 0%, #fcfcfc 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 56px 52px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .form-side::before {
+            content: "";
+            position: absolute;
+            top: 30px;
+            left: 40px;
+            right: 40px;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent);
+        }
+
+        .form-wrapper {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255,255,255,0.96);
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 20px 45px rgba(0,0,0,0.06);
+            border-radius: 28px;
+            padding: 46px 42px;
+        }
+
+        .brand-logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 300;
+            font-size: 12px;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            color: #111;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .welcome-text {
+            font-family: 'Cormorant Garamond', serif;
+            font-weight: 400;
+            font-size: 52px;
+            color: #111;
+            line-height: 1;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .welcome-sub {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 300;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 42px;
+            text-align: center;
+        }
+
+        .fashion-input-group { position: relative; margin-bottom: 28px; }
+
+        .fashion-label {
+            display: block;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 400;
+            font-size: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #777;
+            margin-bottom: 10px;
+        }
+
+        .fashion-input {
+            width: 100%;
+            padding: 16px 0;
+            border: none;
+            border-bottom: 1px solid #d9d9d9;
+            background: transparent;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 300;
+            font-size: 16px;
+            color: #111;
+            outline: none;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .fashion-input:focus {
+            border-bottom-color: #000;
+            box-shadow: 0 1px 0 #000;
+        }
+
+        .fashion-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 18px;
+            background: #000;
+            color: #fff;
+            border: 1px solid #000;
+            border-radius: 14px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 400;
+            font-size: 11px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.4s ease;
+        }
+
+        .fashion-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #000;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            letter-spacing: 2px;
+            padding: 16px 32px;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 100;
+        }
+
+        .toast-msg.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+<body class="h-full">
+
+<div class="fashion-grid">
+    <!-- Visual Side -->
+    <div class="visual-side">
+        <div class="geo-line" style="top:0;left:33%;width:1px;height:100%;"></div>
+        <div class="geo-line" style="top:0;left:66%;width:1px;height:100%;"></div>
+        <div class="diagonal-stripe" style="top:35%;left:0;transform:rotate(-28deg);"></div>
+        <div class="diagonal-stripe" style="top:65%;left:0;transform:rotate(-28deg);"></div>
+
+        <div class="model-container">
+            <div class="big-brand">
+                D<br>E<br>M<br>O<br>I<br>S<br>E<br>L<br>L<br>E
+            </div>
+
+            <img src="pic/signinb.jpeg" alt="Demoiselle Model" class="model-img">
+        </div>
+
+        <div class="editorial-text">
+            <div class="editorial-year">DEMOISELLE • 2026</div>
+        </div>
+    </div>
+
+    <!-- Form Side -->
+    <div class="form-side">
+        <div class="form-wrapper">
+            <div class="brand-logo">DEMOISELLE</div>
+            <h1 class="welcome-text">Welcome Back</h1>
+            <p class="welcome-sub">Sign in to your account</p>
+
+            <form id="signin-form">
+                <div class="fashion-input-group">
+                    <label class="fashion-label">Email Address</label>
+                    <input class="fashion-input" type="email" id="email" placeholder="your@email.com" required>
+                </div>
+
+                <div class="fashion-input-group">
+                    <label class="fashion-label">Password</label>
+                    <input class="fashion-input" type="password" id="password" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="fashion-btn">SIGN IN</button>
+            </form>
+
+            <div class="mt-8 text-center">
+                <a href="signup.html" class="text-xs tracking-widest text-gray-500 hover:text-black">Don't have an account? Create one</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-msg" id="toast"></div>
+
+<script>
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('signin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showToast('Signed in successfully — Welcome to Demoiselle');
+        window.location.href = "home_2.html";
+    });
+
+    lucide.createIcons();
+</script>
+</body>
+</html>
