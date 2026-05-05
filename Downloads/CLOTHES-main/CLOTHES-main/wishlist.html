@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demoiselle — My Wishlist</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&amp;family=Outfit:wght@200;300;400;500;600&amp;display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; margin: 0; overflow: hidden; }
+        * { box-sizing: border-box; }
+        .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
+        .font-sans { font-family: 'Outfit', sans-serif; }
+        /* Professional black & white theme */
+        .product-card {
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            height: 100%;
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+        .product-img-wrap {
+            overflow: hidden;
+            position: relative;
+            background: #f0f0f0;
+            border-radius: 3px;
+            width: 100%;
+            flex: 1;
+            min-height: 320px;
+        }
+        /* Masonry sizing */
+        .product-card {
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .product-card:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+        .product-card:nth-child(2) { grid-column: span 1; grid-row: span 1; }
+        .product-card:nth-child(3) { grid-column: span 1; grid-row: span 2; }
+        .product-card:nth-child(4) { grid-column: span 1; grid-row: span 1; }
+        .product-card:nth-child(5) { grid-column: span 2; grid-row: span 1; }
+        .product-card:nth-child(6) { grid-column: span 1; grid-row: span 1; }
+        @media (max-width: 1024px) {
+            .product-card:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+            .product-card:nth-child(2) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(3) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(4) { grid-column: span 2; grid-row: span 1; }
+            .product-card:nth-child(5) { grid-column: span 1; grid-row: span 2; }
+            .product-card:nth-child(6) { grid-column: span 1; grid-row: span 1; }
+        }
+        @media (max-width: 640px) {
+            .product-card:nth-child(1) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(2) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(3) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(4) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(5) { grid-column: span 1; grid-row: span 1; }
+            .product-card:nth-child(6) { grid-column: span 1; grid-row: span 1; }
+        }
+        .product-img {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .product-card:hover .product-img {
+            transform: scale(1.1);
+        }
+        .product-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0);
+            transition: background 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            justify-content: space-between;
+            padding: 16px;
+            pointer-events: none;
+        }
+        .product-card:hover .product-overlay {
+            background: rgba(0,0,0,0.25);
+        }
+        .overlay-content {
+            width: 100%;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none;
+        }
+        .product-card:hover .overlay-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .overlay-top {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            transform: translateY(-15px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .product-card:hover .overlay-top {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 11px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            pointer-events: auto;
+        }
+        .action-btn:hover {
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            border-color: white;
+        }
+        .heart-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.95);
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+        .heart-btn:hover {
+            transform: scale(1.15);
+            background: #fff;
+        }
+        .price-tag {
+            background: #000;
+            color: white;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            border-radius: 2px;
+            z-index: 5;
+        }
+        .product-name {
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.05em;
+            color: #000;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .product-category {
+            font-size: 10px;
+            letter-spacing: 0.08em;
+            color: #999;
+            text-transform: uppercase;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            width: 36px;
+            height: 36px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+            z-index: 15;
+        }
+        .product-img-wrap:hover .remove-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        .remove-btn:hover {
+            background: rgba(255,0,0,0.9);
+        }
+        .suggest-card .suggest-img {
+            transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.6s ease;
+        }
+        .suggest-card:hover .suggest-img {
+            transform: scale(1.08);
+            filter: brightness(0.88);
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
+        .fade-up-1 { animation-delay: 0.1s; }
+        .fade-up-2 { animation-delay: 0.2s; }
+        .fade-up-3 { animation-delay: 0.3s; }
+        .fade-up-4 { animation-delay: 0.4s; }
+        .fade-up-5 { animation-delay: 0.5s; }
+        .fade-up-6 { animation-delay: 0.6s; }
+        .newsletter-input {
+            border-bottom: 1px solid #666;
+            background: transparent;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        .newsletter-input:focus { border-color: #fff; }
+        .newsletter-input::placeholder { color: #888; }
+        .filter-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+            opacity: 0; transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            pointer-events: none; z-index: 100;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f5f5f5; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        /* Carousel scrollbar */
+        .carousel-container::-webkit-scrollbar {
+            display: none;
+        }
+        @keyframes floatHero {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes linePulse {
+            0%, 100% { transform: scaleX(1); opacity: 0.2; }
+            50% { transform: scaleX(1.35); opacity: 0.5; }
+        }
+
+        .hero-motion {
+            animation: floatHero 3.5s ease-in-out infinite;
+        }
+
+        .hero-line-motion {
+            animation: linePulse 2.5s ease-in-out infinite;
+            transform-origin: center;
+        }
+    </style>
+    <style>body { box-sizing: border-box; }</style>
+    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+</head>
+<body class="h-full">
+<div id="app" class="w-full h-full overflow-auto bg-white font-sans" style="color:#1a1a1a">
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <div class="bg-black text-white font-sans text-sm px-6 py-3 rounded-full shadow-2xl flex items-center gap-2">
+            <i data-lucide="check" style="width:16px;height:16px"></i> <span id="toast-msg">Added to cart</span>
+        </div>
+    </div>
+
+    <!-- Header - BLACK -->
+    <header class="sticky top-0 z-50 bg-black border-b text-white" style="border-color:#333">
+        <div class="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-3">
+                <img src="pic/logo1.jpeg" alt="logo" class="w-20 h-20 object-contain">
+            </a><nav class="hidden md:flex items-center gap-8">
+            <a href="index.html#collection" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">New In</a>
+            <a href="ORDER_2.html" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Shop</a>            <a href="new collection_2.html" class="text-xs tracking-widest uppercase" style="color:#ccc;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">Collections</a>
+        </nav>
+            <div class="flex items-center gap-5">
+                <button class="relative" aria-label="Search" onclick="toggleSearchBar()">
+                    <i data-lucide="search" style="width:20px;height:20px;color:#fff"></i>
+                </button>
+                <button class="relative" aria-label="Wishlist">
+                    <i data-lucide="heart" style="width:20px;height:20px;color:#fff;fill:#fff"></i>
+                    <span id="wishlist-count" class="absolute -top-2 -right-2 w-4 h-4 bg-white text-black rounded-full text-xs flex items-center justify-center font-sans" style="font-size:9px">10</span>
+                </button>
+                <button class="relative" aria-label="Cart"><i data-lucide="shopping-bag" style="width:20px;height:20px;color:#ddd"></i></button>
+            </div>
+        </div>
+    </header>
+    <div id="search-bar" class="hidden bg-white px-6 py-4 border-b" style="border-color:#e5e5e5;">
+        <div class="max-w-7xl mx-auto flex items-center gap-3">
+            <input
+                    id="search-input"
+                    type="text"
+                    placeholder="Search by name or price..."
+                    class="w-full border px-4 py-3 text-sm outline-none"
+                    style="border-color:#ddd; color:#111;"
+                    oninput="filterAndSort()"
+            >
+            <button onclick="clearSearch()" class="px-4 py-3 text-xs tracking-widest uppercase border" style="border-color:#ddd; color:#111;">
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="py-16 md:py-20 text-center px-6">
+        <div class="hero-motion">
+            <p class="text-xs tracking-widest uppercase mb-4" style="color:#aaa;letter-spacing:0.3em">♡ Wishlist</p>
+            <h1 id="page-title" class="font-serif text-5xl md:text-6xl font-light mb-5" style="letter-spacing:0.02em">My Wishlist</h1>
+            <p id="page-subtitle" class="text-sm tracking-wide max-w-md mx-auto" style="color:#888;letter-spacing:0.05em">Your favorite picks, saved for later</p>
+        </div>
+        <div class="w-16 h-px bg-black mx-auto mt-8 opacity-20 hero-line-motion"></div>
+    </section>
+
+    <!-- Filter Bar -->
+    <section class="max-w-7xl mx-auto px-6 mb-10 fade-up fade-up-2">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6" style="border-bottom:1px solid #eee">
+            <p class="text-xs tracking-widest uppercase" style="color:#999"><span id="items-count">10</span> items saved</p>
+            <div class="flex items-center gap-4">
+                <!-- All Categories is selected by default -->
+                <select id="filter-category" class="filter-select text-xs tracking-wider uppercase bg-transparent border px-4 py-2.5 pr-8 rounded-none cursor-pointer" style="border-color:#ddd;color:#555" onchange="filterAndSort()">
+                    <option value="all" selected>All Categories</option>
+                    <option value="dresses">Dresses</option>
+                    <option value="outerwear">Outerwear</option>
+                    <option value="tops">Tops</option>
+                    <option value="bottoms">Bottoms</option>
+                    <option value="accessories">Accessories</option>
+                </select>
+                <select id="sort-by" class="filter-select text-xs tracking-wider uppercase bg-transparent border px-4 py-2.5 pr-8 rounded-none cursor-pointer" style="border-color:#ddd;color:#555" onchange="filterAndSort()">
+                    <option value="newest">Newest First</option>
+                    <option value="price-low">Price: Low → High</option>
+                    <option value="price-high">Price: High → Low</option>
+                    <option value="name">Name A–Z</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Wishlist Grid -->
+    <main class="max-w-7xl mx-auto px-6 mb-24">
+        <div id="wishlist-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); grid-auto-rows: 320px; gap: 24px;">
+            <!-- Populated by JS -->
+        </div>
+        <div id="empty-state" class="hidden text-center py-20">
+            <i data-lucide="heart" style="width:48px;height:48px;color:#ddd;margin:0 auto 16px;display:block"></i>
+            <p class="font-serif text-2xl mb-2" style="color:#999">Your wishlist is empty</p>
+            <p class="text-sm" style="color:#bbb">Start adding your favorite pieces</p>
+        </div>
+    </main>
+
+    <!-- You May Also Like - CAROUSEL with more images + left/right movement -->
+    <!-- You May Also Like - CAROUSEL with more images + left/right movement -->
+    <section class="bg-neutral-50 py-20 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex items-center justify-between mb-8">
+                <div>
+                    <p class="text-xs tracking-widest uppercase mb-3" style="color:#aaa;letter-spacing:0.3em">Curated for you</p>
+                    <h2 id="suggestion-title" class="font-serif text-4xl font-light">You may also like</h2>
+                </div>
+                <!-- Carousel navigation buttons -->
+                <div class="flex gap-3">
+                    <button onclick="scrollCarousel(-1)" class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors">
+                        ←
+                    </button>
+                    <button onclick="scrollCarousel(1)" class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-black hover:text-white transition-colors">
+                        →
+                    </button>
+                </div>
+            </div>
+
+            <div id="suggestions-carousel" class="carousel-container flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory scrollbar-hide">
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Abaya.jpg" class="suggest-img w-full h-full object-cover" alt="Abaya">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Abaya</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$220</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Casual.jpg" class="suggest-img w-full h-full object-cover" alt="Casual Set">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Casual Set</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$160</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Formal.jpg" class="suggest-img w-full h-full object-cover" alt="Formal Look">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Formal Look</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$260</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/Overalls.jpg" class="suggest-img w-full h-full object-cover" alt="Overalls">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Overalls</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$175</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/SS.jpg" class="suggest-img w-full h-full object-cover" alt="Summer Style">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Summer Style</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$145</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/SS1.jpg" class="suggest-img w-full h-full object-cover" alt="Soft Style">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Soft Style</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$150</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/P1.jpg" class="suggest-img w-full h-full object-cover" alt="Classic Piece">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Classic Piece</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$130</p>
+                </div>
+
+                <div class="suggest-card cursor-pointer flex-shrink-0 w-[calc(50%-12px)] md:w-[calc(25%-18px)]">
+                    <div class="overflow-hidden mb-4 aspect-[3/4] rounded-sm">
+                        <img src="pic/P2.jpg" class="suggest-img w-full h-full object-cover" alt="Modern Pick">
+                    </div>
+                    <p class="font-sans text-xs tracking-wider" style="color:#555">Modern Pick</p>
+                    <p class="font-sans text-xs mt-1" style="color:#aaa">$155</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background:#111;color:#999">
+        <div class="max-w-7xl mx-auto px-6 py-16">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
+                <!-- Brand -->
+                <div class="md:col-span-1">
+                    <p class="font-serif text-white text-2xl tracking-widest mb-4" style="letter-spacing:0.25em">DEMOISELLE</p>
+                    <p id="footer-about" class="text-xs leading-relaxed" style="color:#666">Curated fashion for the modern woman. Timeless pieces, minimal design, effortless elegance.</p>
+                </div>
+                <!-- Links -->
+                <div>
+                    <h4 class="text-xs tracking-widest uppercase text-white mb-5" style="letter-spacing:0.2em">Shop</h4>
+                    <ul class="space-y-3 text-xs" style="color:#666">
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">New Arrivals</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Best Sellers</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Sale</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Gift Cards</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-xs tracking-widest uppercase text-white mb-5" style="letter-spacing:0.2em">About</h4>
+                    <ul class="space-y-3 text-xs" style="color:#666">
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Our Story</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Contact Us</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">Shipping &amp; Returns</a></li>
+                        <li><a href="#" onclick="event.preventDefault()" class="hover:text-white" style="transition:color 0.3s">FAQ</a></li>
+                    </ul>
+                </div>
+                <!-- Newsletter -->
+                <div>
+                    <h4 class="text-xs tracking-widest uppercase text-white mb-5" style="letter-spacing:0.2em">Stay in touch</h4>
+                    <p class="text-xs mb-5" style="color:#666">Sign up for exclusive offers and new arrivals.</p>
+                    <form onsubmit="event.preventDefault(); showToast('Subscribed successfully!'); this.reset();" class="flex items-end gap-3 mb-6">
+                        <label for="newsletter-email" class="sr-only">Email</label>
+                        <input id="newsletter-email" type="email" required placeholder="your@email.com" class="newsletter-input flex-1 text-xs py-2 tracking-wider">
+                        <button type="submit" class="text-xs tracking-widest uppercase text-white pb-2" style="border-bottom:1px solid #fff;transition:opacity 0.3s" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'">Sign Up</button>
+                    </form>
+                    <div class="flex items-center gap-5">
+                        <a href="#" onclick="event.preventDefault()" aria-label="Instagram"><i data-lucide="instagram" style="width:16px;height:16px;color:#666;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#666'"></i></a>
+                        <a href="#" onclick="event.preventDefault()" aria-label="Facebook"><i data-lucide="facebook" style="width:16px;height:16px;color:#666;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#666'"></i></a>
+                        <a href="#" onclick="event.preventDefault()" aria-label="Twitter"><i data-lucide="twitter" style="width:16px;height:16px;color:#666;transition:color 0.3s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#666'"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8" style="border-top:1px solid #222">
+                <p class="text-xs text-center" style="color:#444">© 2025 DEMOISELLE. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+    // Wishlist Data - Expanded with more items per category + images + added date
+    let wishlistItems = [
+        { id: 1, name: "Silk Slip Dress", price: 245, category: "dresses", image: "pic/Dresses1.jpg", added: "2025-04-20" },
+        { id: 2, name: "Lace Maxi Dress", price: 310, category: "dresses", image: "pic/Dresses2.jpg", added: "2025-04-19" },
+        { id: 3, name: "Oversized Wool Coat", price: 420, category: "outerwear", image: "pic/Jackets.jpg", added: "2025-04-18" },
+        { id: 4, name: "Leather Biker Jacket", price: 280, category: "outerwear", image: "pic/BlackJacket.jpg", added: "2025-04-17" },
+        { id: 5, name: "Cashmere Turtleneck Sweater", price: 195, category: "tops", image: "pic/Turtleneck.jpg", added: "2025-04-16" },
+        { id: 6, name: "Silk Button Blouse", price: 155, category: "tops", image: "pic/Blouse.jpg", added: "2025-04-15" },
+        { id: 7, name: "Tailored Wide Leg Pants", price: 165, category: "bottoms", image: "pic/jeans.jpg", added: "2025-04-14" },
+        { id: 8, name: "High Waisted Denim Skirt", price: 135, category: "bottoms", image: "pic/Skirt.jpg", added: "2025-04-13" },
+        { id: 9, name: "Structured Mini Bag", price: 380, category: "accessories", image: "pic/Bags.jpg", added: "2025-04-12" },
+        { id: 10, name: "Gold Chain Necklace", price: 95, category: "accessories", image: "pic/Necklace.jpg", added: "2025-04-11" },
+        { id: 11, name: "Classic Dress", price: 245, category: "dresses", image: "pic/Dresses.jpg", added: "2025-04-20" },
+        { id: 12, name: "Daily Shirt", price: 120, category: "tops", image: "pic/Shirts.jpg", added: "2025-04-17" },
+        { id: 13, name: "Tailored Blazer", price: 280, category: "outerwear", image: "pic/Blazers.jpg", added: "2025-04-16" },
+        { id: 14, name: "Casual Vest", price: 140, category: "outerwear", image: "pic/Vests.jpg", added: "2025-04-15" },
+        { id: 15, name: "Wide Pants", price: 165, category: "bottoms", image: "pic/Pants.png", added: "2025-04-14" },
+        { id: 16, name: "Leather Belt", price: 85, category: "accessories", image: "pic/Belts.jpg", added: "2025-04-11" }
+    ];
+
+    function createCard(item, index) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.dataset.id = item.id;
+
+        const gradients = [
+            'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)',
+            'linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%)',
+            'linear-gradient(135deg, #eeeeee 0%, #dcdcdc 100%)',
+            'linear-gradient(135deg, #f2f2f2 0%, #e5e5e5 100%)',
+            'linear-gradient(135deg, #efefef 0%, #dedede 100%)',
+            'linear-gradient(135deg, #f1f1f1 0%, #e3e3e3 100%)'
+        ];
+        const gradient = gradients[index % 6];
+
+        card.innerHTML = `
+    <div class="product-img-wrap relative" style="background: ${gradient}">
+        <div class="product-img">
+            <img src="${item.image}" class="w-full h-full object-cover" alt="${item.name}">
+        </div>
+        <div class="product-overlay">
+            <div class="overlay-top">
+                <div class="price-tag">$${item.price}</div>
+                <button class="heart-btn" aria-label="Add to wishlist" onclick="event.stopPropagation()">
+                    <i data-lucide="heart" style="width:18px;height:18px;color:#000;fill:#000"></i>
+                </button>
+            </div>
+            <div class="overlay-content">
+                <div class="product-actions">
+<button class="action-btn" onclick="event.stopPropagation(); goToOrder('${item.name}', '${item.image}', '${item.price}', '${item.category}')">                        <i data-lucide="shopping-bag" style="width:14px;height:14px"></i>
+                        Add
+                    </button>
+                    <button class="action-btn" onclick="event.stopPropagation(); showToast('Added to compare')">
+                        <i data-lucide="filter" style="width:14px;height:14px"></i>
+                        Compare
+                    </button>
+                </div>
+            </div>
+        </div>
+        <button class="remove-btn" aria-label="Remove" onclick="event.stopPropagation(); removeItem(${item.id})">
+            <i data-lucide="trash-2" style="width:16px;height:16px;color:#fff"></i>
+        </button>
+    </div>
+    <div style="padding: 16px 0; position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(255,255,255,0.95), transparent); padding-top: 32px;">
+        <h3 class="product-name">${item.name}</h3>
+        <p class="product-category">${item.category}</p>
+    </div>
+  `;
+        return card;
+    }
+    function toggleSearchBar() {
+        const bar = document.getElementById('search-bar');
+        bar.classList.toggle('hidden');
+
+        if (!bar.classList.contains('hidden')) {
+            document.getElementById('search-input').focus();
+        }
+    }
+
+    function clearSearch() {
+        const input = document.getElementById('search-input');
+        input.value = '';
+        filterAndSort();
+    }
+    function renderGrid(itemsToRender = null) {
+        const grid = document.getElementById('wishlist-grid');
+        const empty = document.getElementById('empty-state');
+
+        const filtered = itemsToRender || getFilteredItems();
+
+        grid.innerHTML = '';
+
+        if (!filtered || filtered.length === 0) {
+            grid.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        grid.classList.remove('hidden');
+        empty.classList.add('hidden');
+
+        filtered.forEach((item, i) => {
+            const card = createCard(item, i);
+            grid.appendChild(card);
+        });
+
+        document.getElementById('items-count').textContent = filtered.length;
+        document.getElementById('wishlist-count').textContent = wishlistItems.length;
+
+        lucide.createIcons();
+    }
+    function getFilteredItems() {
+        const filterElement = document.getElementById('filter-category');
+        const sortElement = document.getElementById('sort-by');
+        const searchElement = document.getElementById('search-input');
+
+        const cat = filterElement ? filterElement.value || 'all' : 'all';
+        const sort = sortElement ? sortElement.value || 'newest' : 'newest';
+        const search = searchElement ? searchElement.value.trim().toLowerCase() : '';
+
+        let items = cat === 'all'
+            ? [...wishlistItems]
+            : wishlistItems.filter(i => i.category === cat);
+
+        if (search) {
+            items = items.filter(i => {
+                const nameMatch = i.name.toLowerCase().includes(search);
+                const priceMatch = String(i.price).includes(search);
+                return nameMatch || priceMatch;
+            });
+        }
+
+        if (sort === 'price-low') items.sort((a, b) => a.price - b.price);
+        else if (sort === 'price-high') items.sort((a, b) => b.price - a.price);
+        else if (sort === 'name') items.sort((a, b) => a.name.localeCompare(b.name));
+        else items.sort((a, b) => new Date(b.added) - new Date(a.added));
+
+        return items;
+    }
+
+    function filterAndSort() { renderGrid(); }
+    function goToOrder(name, image, price, category) {
+        localStorage.setItem('selectedProduct', JSON.stringify({
+            name,
+            image,
+            price,
+            category
+        }));
+
+        window.location.href = 'order.html';
+    }
+    function removeItem(id) {
+        const card = document.querySelector(`[data-id="${id}"]`);
+        if (card) {
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                wishlistItems = wishlistItems.filter(i => i.id !== id);
+                renderGrid();
+                showToast('Removed from wishlist');
+            }, 400);
+        }
+    }
+
+    function addToCart(name) { showToast(`${name} added to cart`); }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    // Carousel scroll function (left/right)
+    function scrollCarousel(direction) {
+        const carousel = document.getElementById('suggestions-carousel');
+        const scrollAmount = carousel.clientWidth * 0.75; // smooth scroll by ~75% of visible area
+        carousel.scrollBy({
+            left: direction * scrollAmount,
+            behavior: 'smooth'
+        });
+    }
+
+    // Element SDK (unchanged)
+    const defaultConfig = {
+        background_color: '#ffffff',
+        surface_color: '#f5f5f4',
+        text_color: '#1a1a1a',
+        primary_action_color: '#000000',
+        secondary_action_color: '#888888',
+        font_family: 'Outfit',
+        font_size: 14,
+        page_title: 'My Wishlist',
+        page_subtitle: 'Your favorite picks, saved for later',
+        suggestion_title: 'You may also like',
+        footer_about: 'Curated fashion for the modern woman. Timeless pieces, minimal design, effortless elegance.'
+    };
+
+    async function applyConfig(config) {
+        const c = { ...defaultConfig, ...config };
+        const app = document.getElementById('app');
+        app.style.background = c.background_color;
+        app.style.color = c.text_color;
+        document.getElementById('page-title').textContent = c.page_title;
+        document.getElementById('page-subtitle').textContent = c.page_subtitle;
+        document.getElementById('suggestion-title').textContent = c.suggestion_title;
+        document.getElementById('footer-about').textContent = c.footer_about;
+        const ff = `${c.font_family}, Outfit, sans-serif`;
+        document.querySelectorAll('.font-sans').forEach(el => el.style.fontFamily = ff);
+        const base = c.font_size || 14;
+        document.querySelectorAll('.btn-cart').forEach(el => el.style.fontSize = `${base * 0.78}px`);
+        app.style.background = c.background_color;
+        document.querySelectorAll('.bg-neutral-50').forEach(el => el.style.background = c.surface_color);
+        document.getElementById('page-title').style.color = c.text_color;
+        document.querySelectorAll('.btn-cart').forEach(el => el.style.borderColor = c.primary_action_color);
+        document.getElementById('page-subtitle').style.color = c.secondary_action_color;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const filter = document.getElementById('filter-category');
+        const sort = document.getElementById('sort-by');
+
+        if (filter) filter.value = 'all';
+        if (sort) sort.value = 'newest';
+
+        renderGrid(wishlistItems);
+        lucide.createIcons();
+
+        if (window.elementSdk) {
+            window.elementSdk.init({
+                defaultConfig,
+                onConfigChange: applyConfig,
+                mapToCapabilities: (config) => {
+                    const c = { ...defaultConfig, ...config };
+                    const makeColor = (key) => ({
+                        get: () => c[key] || defaultConfig[key],
+                        set: (v) => { c[key] = v; window.elementSdk.setConfig({ [key]: v }); }
+                    });
+                    return {
+                        recolorables: [
+                            makeColor('background_color'),
+                            makeColor('surface_color'),
+                            makeColor('text_color'),
+                            makeColor('primary_action_color'),
+                            makeColor('secondary_action_color')
+                        ],
+                        borderables: [],
+                        fontEditable: {
+                            get: () => c.font_family || defaultConfig.font_family,
+                            set: (v) => { c.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
+                        },
+                        fontSizeable: {
+                            get: () => c.font_size || defaultConfig.font_size,
+                            set: (v) => { c.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
+                        }
+                    };
+                },
+                mapToEditPanelValues: (config) => {
+                    const c = { ...defaultConfig, ...config };
+                    return new Map([
+                        ['page_title', c.page_title],
+                        ['page_subtitle', c.page_subtitle],
+                        ['suggestion_title', c.suggestion_title],
+                        ['footer_about', c.footer_about]
+                    ]);
+                }
+            });
+        }
+    });
+</script>
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eee6cc5e218997d',t:'MTc3NjYyODA4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>

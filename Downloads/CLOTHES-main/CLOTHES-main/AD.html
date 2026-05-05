@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOIR ATELIER — Admin</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <script src="/_sdk/data_sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&amp;family=DM+Sans:wght@300;400;500;700&amp;display=swap" rel="stylesheet">
+    <style>
+        html, body { height: 100%; margin: 0; }
+        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-track.light { background: #f5f5f5; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb.light { background: #ccc; }
+        .app-shell { height: 100%; overflow: auto; background: #0a0a0a; color: #e5e5e5; font-family: 'DM Sans', sans-serif; transition: background 0.4s, color 0.4s; }
+        .app-shell.light { background: #f9f9f9; color: #1a1a1a; }
+        .font-display { font-family: 'Playfair Display', serif; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes countUp { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes drawLine { from { width: 0; } to { width: 100%; } }
+
+        .anim-fade-up { animation: fadeUp 0.6s ease forwards; }
+        .anim-slide-in { animation: slideIn 0.5s ease forwards; }
+        .anim-count { animation: countUp 0.4s ease forwards; }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+
+        .card-hover { transition: all 0.3s ease; border: 1px solid #222; }
+        .card-hover:hover { border-color: #fff; transform: translateY(-2px); }
+        .light .card-hover { border-color: #ddd; }
+        .light .card-hover:hover { border-color: #333; }
+
+        .btn-primary { background: #fff; color: #000; transition: all 0.2s; }
+        .btn-primary:hover { background: #ccc; }
+        .btn-danger { background: #000; color: #fff; border: 1px solid #444; transition: all 0.2s; }
+        .btn-danger:hover { border-color: #f44; color: #f44; }
+        .btn-ghost { background: transparent; color: #888; border: 1px solid #333; transition: all 0.2s; }
+        .btn-ghost:hover { color: #fff; border-color: #fff; }
+
+        .tab-btn { position: relative; padding: 12px 0; color: #555; transition: color 0.3s; cursor: pointer; background: none; border: none; font-family: 'DM Sans', sans-serif; font-size: 14px; letter-spacing: 0.5px; }
+        .tab-btn::after { content: ''; position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: #fff; transition: width 0.3s; }
+        .tab-btn.active { color: #fff; }
+        .tab-btn.active::after { width: 100%; }
+        .tab-btn:hover { color: #aaa; }
+
+        .input-noir { background: #0a0a0a; border: 1px solid #222; color: #fff; padding: 10px 14px; border-radius: 4px; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s; width: 100%; }
+        .input-noir:focus { outline: none; border-color: #fff; }
+        .input-noir::placeholder { color: #444; }
+        .light .input-noir { background: #fff; border-color: #ddd; color: #1a1a1a; }
+        .light .input-noir:focus { border-color: #333; }
+        .light .input-noir::placeholder { color: #aaa; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 50; display: flex; align-items: center; justify-content: center; }
+
+        .clothes-img { width: 100%; aspect-ratio: 3/4; background: linear-gradient(135deg, #111 0%, #1a1a1a 50%, #0d0d0d 100%); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .clothes-img::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.02) 10px, rgba(255,255,255,0.02) 20px); }
+
+        .stat-card { position: relative; overflow: hidden; border-left: 4px solid #fff; }
+        .stat-card::before { content: ''; position: absolute; top: -50%; right: -50%; width: 100%; height: 100%; background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%); }
+        .stat-card.items-card { border-left-color: #ff6b9d; background: linear-gradient(135deg, #0a0a0a 0%, rgba(255, 107, 157, 0.05) 100%); }
+        .stat-card.collections-card { border-left-color: #00d4ff; background: linear-gradient(135deg, #0a0a0a 0%, rgba(0, 212, 255, 0.05) 100%); }
+        .stat-card.orders-card { border-left-color: #ffd700; background: linear-gradient(135deg, #0a0a0a 0%, rgba(255, 215, 0, 0.05) 100%); }
+        .stat-card.customers-card { border-left-color: #00ff88; background: linear-gradient(135deg, #0a0a0a 0%, rgba(0, 255, 136, 0.05) 100%); }
+
+        .order-row { transition: background 0.2s; }
+        .order-row:hover { background: #0a0a0a; }
+
+        .gauge-ring { transition: stroke-dashoffset 1s ease; }
+
+        .toast-container { position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+        .toast { padding: 12px 20px; border-radius: 4px; font-size: 13px; animation: fadeUp 0.3s ease; }
+        .toast-success { background: #fff; color: #000; }
+        .toast-error { background: #300; color: #f88; border: 1px solid #f44; }
+
+        .confirm-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #1a0000; border: 1px solid #f44; border-radius: 4px; animation: fadeUp 0.2s ease; }
+    </style>
+    <style>body { box-sizing: border-box; }</style>
+</head>
+<body class="h-full">
+<div class="app-shell" id="app">
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div><!-- Sidebar + Main Layout -->
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside class="w-64 border-r border-zinc-800 flex-shrink-0 flex flex-col" style="min-height:100%">
+            <div class="p-6 border-b border-zinc-800 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center gap-3 mb-1">
+                    <svg width="32" height="32" viewbox="0 0 32 32" fill="none">
+                        <rect width="32" height="32" fill="#fff" /> <path d="M8 8h6v16H8zM18 8h6v8h-6z" fill="#000" /> <circle cx="21" cy="24" r="3" fill="#000" />
+                    </svg>
+                    <div>
+                        <div class="font-display font-black text-lg tracking-tight leading-none" id="sidebarShopName">
+                            NOIR ATELIER
+                        </div>
+                        <div class="text-[10px] tracking-[3px] text-zinc-500 uppercase" id="sidebarTagline">
+                            Curated Darkness
+                        </div>
+                    </div>
+                </div><!-- Theme Toggle --> <button onclick="toggleTheme()" title="Toggle theme" class="p-1.5 rounded hover:bg-zinc-900 transition-colors"> <i data-lucide="moon" style="width:16px;height:16px" id="themeIcon"></i> </button>
+            </div>
+            <nav class="flex-1 p-4 space-y-1">
+                <button onclick="switchSection('dashboard')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm text-left transition-all hover:bg-zinc-900" data-section="dashboard"> <i data-lucide="layout-dashboard" style="width:16px;height:16px"></i> Dashboard </button> <button onclick="switchSection('inventory')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm text-left transition-all hover:bg-zinc-900" data-section="inventory"> <i data-lucide="shirt" style="width:16px;height:16px"></i> Inventory </button> <button onclick="switchSection('collections')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm text-left transition-all hover:bg-zinc-900" data-section="collections"> <i data-lucide="layers" style="width:16px;height:16px"></i> Collections </button> <button onclick="switchSection('orders')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm text-left transition-all hover:bg-zinc-900" data-section="orders"> <i data-lucide="shopping-bag" style="width:16px;height:16px"></i> Orders </button> <button onclick="switchSection('customers')" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded text-sm text-left transition-all hover:bg-zinc-900" data-section="customers"> <i data-lucide="users" style="width:16px;height:16px"></i> Customers </button>
+            </nav><!-- Shop Health Gauge at bottom -->
+            <div class="p-5 border-t border-zinc-800">
+                <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-3">
+                    Shop Pulse
+                </div>
+                <div class="flex items-center justify-center">
+                    <svg width="100" height="60" viewbox="0 0 100 60">
+                        <path d="M10 55 A 40 40 0 0 1 90 55" fill="none" stroke="#1a1a1a" stroke-width="6" stroke-linecap="round" /> <path id="gaugeArc" d="M10 55 A 40 40 0 0 1 90 55" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-dasharray="126" stroke-dashoffset="126" class="gauge-ring" /> <text x="50" y="48" text-anchor="middle" fill="#fff" font-size="16" font-weight="700" font-family="Playfair Display" id="gaugeText">
+                        0%
+                    </text> <text x="50" y="58" text-anchor="middle" fill="#555" font-size="7" font-family="DM Sans" letter-spacing="1">
+                        HEALTH
+                    </text>
+                    </svg>
+                </div>
+            </div>
+        </aside><!-- Main Content -->
+        <main class="flex-1 overflow-auto p-8" id="mainContent">
+            <!-- DASHBOARD SECTION -->
+            <section id="sec-dashboard" class="section-panel">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl font-black tracking-tight anim-fade-up" id="dashTitle">Dashboard</h1>
+                        <p class="text-zinc-500 text-sm mt-1 anim-fade-up" style="animation-delay:0.1s">Your empire at a glance</p>
+                    </div>
+                    <div class="text-right text-xs text-zinc-600" id="dashDate"></div>
+                </div><!-- Stats Row -->
+                <div class="grid grid-cols-5 gap-4 mb-8">
+                    <div class="stat-card card-hover rounded-lg p-5 anim-fade-up" style="animation-delay:0.1s; border-left-color: #fbbf24; background: linear-gradient(135deg, #0a0a0a 0%, rgba(251, 191, 36, 0.05) 100%);">
+                        <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-2">
+                            Revenue
+                        </div>
+                        <div class="font-display text-3xl font-black anim-count" id="statRevenue" style="color: #fbbf24;">
+                            $0
+                        </div>
+                        <div class="flex items-center gap-2 mt-2"><span class="text-xs font-semibold text-green-400">↑ 12%</span> <span class="text-xs text-zinc-500">this month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card card-hover rounded-lg p-5 anim-fade-up" style="animation-delay:0.15s; border-left-color: #3b82f6; background: linear-gradient(135deg, #0a0a0a 0%, rgba(59, 130, 246, 0.05) 100%);">
+                        <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-2">
+                            Orders
+                        </div>
+                        <div class="font-display text-3xl font-black anim-count" id="statOrders" style="color: #3b82f6;">
+                            0
+                        </div>
+                        <div class="flex items-center gap-2 mt-2"><span class="text-xs font-semibold text-green-400">↑ 8%</span> <span class="text-xs text-zinc-500">this month</span>
+                        </div>
+                    </div>
+                    <div class="stat-card card-hover rounded-lg p-5 anim-fade-up" style="animation-delay:0.2s; border-left-color: #ec4899; background: linear-gradient(135deg, #0a0a0a 0%, rgba(236, 72, 153, 0.05) 100%);">
+                        <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-2">
+                            Products
+                        </div>
+                        <div class="font-display text-3xl font-black anim-count" id="statItems">
+                            0
+                        </div>
+                        <div class="text-zinc-600 text-xs mt-2" id="collectionsLabel">
+                            In collections
+                        </div>
+                    </div>
+                    <div class="stat-card card-hover rounded-lg p-5 anim-fade-up" style="animation-delay:0.25s; border-left-color: #10b981; background: linear-gradient(135deg, #0a0a0a 0%, rgba(16, 185, 129, 0.05) 100%);">
+                        <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-2">
+                            Customers
+                        </div>
+                        <div class="font-display text-3xl font-black anim-count" id="statCustomers">
+                            0
+                        </div>
+                        <div class="flex items-center gap-2 mt-2"><span class="text-xs font-semibold text-green-400" id="newCustomersLabel">↑ 0 new</span>
+                        </div>
+                    </div>
+                    <div class="stat-card collections-card card-hover rounded-lg p-5 anim-fade-up" style="animation-delay:0.3s">
+                        <div class="text-[10px] tracking-[2px] text-zinc-500 uppercase mb-2">
+                            Collections
+                        </div>
+                        <div class="font-display text-3xl font-black anim-count" id="statCollections">
+                            0
+                        </div>
+                        <div class="mt-2 h-px w-full bg-zinc-800">
+                            <div class="h-px bg-cyan-400 transition-all duration-1000" id="barCollections" style="width:0%"></div>
+                        </div>
+                    </div>
+                </div><!-- Creative Shop Situation Card -->
+                <div class="card-hover rounded-lg bg-zinc-950 p-8 mb-8 anim-fade-up" style="animation-delay:0.5s">
+                    <div class="flex items-start gap-8">
+                        <div class="flex-1">
+                            <div class="text-[10px] tracking-[3px] text-zinc-500 uppercase mb-3">
+                                Shop Chronicle
+                            </div>
+                            <div class="font-display text-2xl font-bold italic leading-snug mb-4" id="shopStory">
+                                "Every garment tells a story of shadow and light — your atelier awaits its first chapter."
+                            </div>
+                            <div class="flex gap-6 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-white pulse-dot"></span> <span class="text-zinc-400">Active Now</span>
+                                </div>
+                                <div id="storyMood" class="text-zinc-500">
+                                    Add items to begin your story
+                                </div>
+                            </div>
+                        </div><!-- Decorative art -->
+                        <div class="flex-shrink-0 w-40 h-40 relative">
+                            <svg viewbox="0 0 160 160" fill="none" class="w-full h-full">
+                                <circle cx="80" cy="80" r="70" stroke="#222" stroke-width="1" /> <circle cx="80" cy="80" r="50" stroke="#333" stroke-width="0.5" /> <circle cx="80" cy="80" r="30" stroke="#444" stroke-width="0.5" /> <line x1="80" y1="10" x2="80" y2="150" stroke="#1a1a1a" stroke-width="0.5" /> <line x1="10" y1="80" x2="150" y2="80" stroke="#1a1a1a" stroke-width="0.5" /> <circle id="gaugeOrb" cx="80" cy="30" r="4" fill="#fff" opacity="0.8" /> <text x="80" y="84" text-anchor="middle" fill="#fff" font-size="20" font-weight="900" font-family="Playfair Display" id="orbLabel">
+                                N
+                            </text>
+                            </svg>
+                        </div>
+                    </div>
+                </div><!-- Recent Activity -->
+                <div class="card-hover rounded-lg bg-zinc-950 p-6 anim-fade-up" style="animation-delay:0.6s">
+                    <div class="text-[10px] tracking-[3px] text-zinc-500 uppercase mb-4">
+                        Recent Activity
+                    </div>
+                    <div id="recentActivity" class="space-y-3">
+                        <div class="text-zinc-600 text-sm italic">
+                            No activity yet — your canvas is blank
+                        </div>
+                    </div>
+                </div><!-- Sales & Inventory Charts -->
+                <div class="grid grid-cols-2 gap-4 mt-8">
+                    <div class="card-hover rounded-lg bg-zinc-950 p-6 anim-fade-up" style="animation-delay:0.7s">
+                        <div class="text-[10px] tracking-[3px] text-zinc-500 uppercase mb-4">
+                            Sales Trend
+                        </div>
+                        <svg viewbox="0 0 300 150" class="w-full" style="height:180px"><defs>
+                            <lineargradient id="chartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#fff;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#fff;stop-opacity:0" />
+                            </lineargradient>
+                        </defs> <!-- Grid lines --> <line x1="30" y1="130" x2="280" y2="130" stroke="#222" stroke-width="1" /> <line x1="30" y1="90" x2="280" y2="90" stroke="#111" stroke-width="0.5" /> <line x1="30" y1="50" x2="280" y2="50" stroke="#111" stroke-width="0.5" /> <!-- Bars --> <rect x="50" y="105" width="20" height="25" fill="#fff" opacity="0.6" rx="2" /> <rect x="90" y="80" width="20" height="50" fill="#fff" opacity="0.7" rx="2" /> <rect x="130" y="60" width="20" height="70" fill="#fff" opacity="0.8" rx="2" /> <rect x="170" y="75" width="20" height="55" fill="#fff" opacity="0.7" rx="2" /> <rect x="210" y="50" width="20" height="80" fill="#fff" opacity="0.9" rx="2" /> <!-- X-axis labels --> <text x="60" y="145" text-anchor="middle" fill="#666" font-size="10">
+                            Week 1
+                        </text> <text x="100" y="145" text-anchor="middle" fill="#666" font-size="10">
+                            Week 2
+                        </text> <text x="140" y="145" text-anchor="middle" fill="#666" font-size="10">
+                            Week 3
+                        </text> <text x="180" y="145" text-anchor="middle" fill="#666" font-size="10">
+                            Week 4
+                        </text> <text x="220" y="145" text-anchor="middle" fill="#666" font-size="10">
+                            Week 5
+                        </text>
+                        </svg>
+                        <div class="text-xs text-zinc-500 mt-2">
+                            Orders placed over last 5 weeks
+                        </div>
+                    </div>
+                    <div class="card-hover rounded-lg bg-zinc-950 p-6 anim-fade-up" style="animation-delay:0.8s">
+                        <div class="text-[10px] tracking-[3px] text-zinc-500 uppercase mb-4">
+                            Inventory Health
+                        </div>
+                        <svg viewbox="0 0 300 150" class="w-full" style="height:180px"><defs>
+                            <lineargradient id="invGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#fff;stop-opacity:0.3" />
+                                <stop offset="100%" style="stop-color:#fff;stop-opacity:0" />
+                            </lineargradient>
+                        </defs> <!-- Background circle --> <circle cx="150" cy="75" r="60" fill="none" stroke="#111" stroke-width="1" /> <circle cx="150" cy="75" r="40" fill="none" stroke="#222" stroke-width="0.5" /> <!-- Donut segments --> <circle cx="150" cy="75" r="50" fill="none" stroke="#fff" stroke-width="12" stroke-dasharray="78.5 314" stroke-dashoffset="0" opacity="0.8" /> <circle cx="150" cy="75" r="50" fill="none" stroke="#666" stroke-width="12" stroke-dasharray="78.5 314" stroke-dashoffset="-78.5" opacity="0.4" /> <!-- Center text --> <text x="150" y="70" text-anchor="middle" font-size="24" font-weight="bold" fill="#fff" font-family="Playfair Display">
+                            75%
+                        </text> <text x="150" y="90" text-anchor="middle" font-size="11" fill="#999">
+                            Stocked
+                        </text>
+                        </svg>
+                        <div class="flex gap-3 text-xs mt-2">
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 bg-white rounded-full"></span><span class="text-zinc-400">In Stock</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2 h-2 bg-zinc-600 rounded-full"></span><span class="text-zinc-600">Low Stock</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- INVENTORY SECTION -->
+            <section id="sec-inventory" class="section-panel hidden">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl font-black tracking-tight">Inventory</h1>
+                        <p class="text-zinc-500 text-sm mt-1">Manage your garments</p>
+                    </div><button onclick="openModal('addItem')" class="btn-primary px-5 py-2.5 rounded text-sm font-medium flex items-center gap-2"> <i data-lucide="plus" style="width:14px;height:14px"></i> Add Item </button>
+                </div>
+                <div id="inventoryGrid" class="grid grid-cols-3 gap-5">
+                    <div class="text-zinc-600 text-sm italic col-span-3 text-center py-20">
+                        No items yet — add your first garment
+                    </div>
+                </div>
+            </section><!-- COLLECTIONS SECTION -->
+            <section id="sec-collections" class="section-panel hidden">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl font-black tracking-tight">Collections</h1>
+                        <p class="text-zinc-500 text-sm mt-1">Curate your drops</p>
+                    </div><button onclick="openModal('addCollection')" class="btn-primary px-5 py-2.5 rounded text-sm font-medium flex items-center gap-2"> <i data-lucide="plus" style="width:14px;height:14px"></i> New Collection </button>
+                </div>
+                <div id="collectionsGrid" class="grid grid-cols-2 gap-5">
+                    <div class="text-zinc-600 text-sm italic col-span-2 text-center py-20">
+                        No collections yet
+                    </div>
+                </div>
+            </section><!-- ORDERS SECTION -->
+            <section id="sec-orders" class="section-panel hidden">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl font-black tracking-tight">Orders</h1>
+                        <p class="text-zinc-500 text-sm mt-1">Track every transaction</p>
+                    </div><button onclick="openModal('addOrder')" class="btn-primary px-5 py-2.5 rounded text-sm font-medium flex items-center gap-2"> <i data-lucide="plus" style="width:14px;height:14px"></i> New Order </button>
+                </div>
+                <div class="flex gap-3 mb-6">
+                    <button onclick="filterOrders('all')" class="tab-btn active" data-filter="all">All</button> <button onclick="filterOrders('new')" class="tab-btn" data-filter="new">New</button> <button onclick="filterOrders('processing')" class="tab-btn" data-filter="processing">Processing</button> <button onclick="filterOrders('pending')" class="tab-btn" data-filter="pending">Pending</button> <button onclick="filterOrders('completed')" class="tab-btn" data-filter="completed">Completed</button>
+                </div>
+                <div class="card-hover rounded-lg bg-zinc-950 overflow-hidden">
+                    <table class="w-full text-sm">
+                        <thead>
+                        <tr class="border-b border-zinc-800 text-[10px] tracking-[2px] text-zinc-500 uppercase">
+                            <th class="text-left p-4">Customer</th>
+                            <th class="text-left p-4">Item</th>
+                            <th class="text-left p-4">Total</th>
+                            <th class="text-left p-4">Status</th>
+                            <th class="text-left p-4">Date</th>
+                            <th class="text-right p-4">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="ordersTableBody">
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-zinc-600 italic">No orders yet</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section><!-- CUSTOMERS SECTION -->
+            <section id="sec-customers" class="section-panel hidden">
+                <div class="flex items-end justify-between mb-8">
+                    <div>
+                        <h1 class="font-display text-4xl font-black tracking-tight">Customers</h1>
+                        <p class="text-zinc-500 text-sm mt-1">Your community</p>
+                    </div><button onclick="openModal('addCustomer')" class="btn-primary px-5 py-2.5 rounded text-sm font-medium flex items-center gap-2"> <i data-lucide="plus" style="width:14px;height:14px"></i> Add Customer </button>
+                </div>
+                <div id="customersGrid" class="grid grid-cols-3 gap-4">
+                    <div class="text-zinc-600 text-sm italic col-span-3 text-center py-20">
+                        No registered customers
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div><!-- MODAL -->
+    <div id="modalOverlay" class="modal-overlay hidden">
+        <div class="bg-zinc-950 border border-zinc-800 rounded-lg w-full max-w-md p-6 anim-fade-up" id="modalContent"></div>
+    </div>
+</div>
+<script>
+    // ============ STATE ============
+    let allData = [];
+    let currentSection = 'dashboard';
+    let currentOrderFilter = 'all';
+    let deleteConfirmId = null;
+    let isDarkMode = true;
+
+    const clotheTypes = {
+        coat: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><rect x="20" y="10" width="40" height="60" rx="4" stroke="currentColor" stroke-width="1.5"/><path d="M20 25 Q40 35 60 25" stroke="currentColor" stroke-width="1"/><line x1="40" y1="10" x2="40" y2="25" stroke="currentColor" stroke-width="1"/></svg>`, label: 'Coat', colors: ['#1a1a1a', '#2a2a2a', '#3a3a3a'] },
+        blouse: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><path d="M25 15 L15 30 L25 30 L25 75 L55 75 L55 30 L65 30 L55 15 Z" stroke="currentColor" stroke-width="1.5"/><circle cx="40" cy="22" r="3" stroke="currentColor" stroke-width="1"/></svg>`, label: 'Blouse', colors: ['#0a0a0a', '#1a1a1a', '#2a2a2a'] },
+        jeans: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><path d="M28 20 L28 80 M52 20 L52 80 M28 80 Q28 85 25 90 M52 80 Q52 85 55 90" stroke="currentColor" stroke-width="1.5"/><path d="M25 35 Q25 30 28 28 M55 35 Q55 30 52 28" stroke="currentColor" stroke-width="1"/></svg>`, label: 'Jeans', colors: ['#1a3a5a', '#2a4a6a', '#0a2a4a'] },
+        dress: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><path d="M30 20 L20 30 L22 85 Q40 95 58 85 L60 30 L50 20 Z" stroke="currentColor" stroke-width="1.5"/><path d="M30 20 L50 20" stroke="currentColor" stroke-width="1"/></svg>`, label: 'Dress', colors: ['#1a1a2a', '#2a2a3a', '#0a0a1a'] },
+        sweater: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><rect x="18" y="25" width="44" height="55" rx="3" stroke="currentColor" stroke-width="1.5"/><line x1="18" y1="45" x2="62" y2="45" stroke="currentColor" stroke-width="0.8"/><circle cx="40" cy="35" r="4" fill="none" stroke="currentColor" stroke-width="0.8"/></svg>`, label: 'Sweater', colors: ['#1a1a1a', '#3a3a3a', '#2a2a2a'] },
+        shirt: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><rect x="20" y="20" width="40" height="50" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M40 20 L40 50" stroke="currentColor" stroke-width="1"/><circle cx="37" cy="28" r="1.5" fill="currentColor"/><circle cx="43" cy="28" r="1.5" fill="currentColor"/></svg>`, label: 'Shirt', colors: ['#0a0a0a', '#1a1a1a', '#2a2a2a'] },
+        skirt: { svg: `<svg viewBox="0 0 80 100" fill="none" class="w-12 h-14 opacity-40"><path d="M30 30 L22 85 Q40 92 58 85 L50 30 Z" stroke="currentColor" stroke-width="1.5"/><line x1="30" y1="30" x2="50" y2="30" stroke="currentColor" stroke-width="1"/></svg>`, label: 'Skirt', colors: ['#1a1a2a', '#2a2a3a', '#0a0a1a'] },
+    };
+
+    // ============ THEME ============
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        const shell = document.querySelector('.app-shell');
+        const icon = document.getElementById('themeIcon');
+        if (isDarkMode) {
+            shell.classList.remove('light');
+            icon.setAttribute('data-lucide', 'moon');
+        } else {
+            shell.classList.add('light');
+            icon.setAttribute('data-lucide', 'sun');
+        }
+        lucide.createIcons();
+        applyThemeStyles();
+    }
+
+    function applyThemeStyles() {
+        const shell = document.querySelector('.app-shell');
+        const sidebar = document.querySelector('aside');
+        const inputs = document.querySelectorAll('.input-noir');
+
+        if (isDarkMode) {
+            shell.style.background = '#000';
+            shell.style.color = '#fff';
+            sidebar.style.background = '#000';
+            sidebar.style.borderColor = '#222';
+            document.querySelectorAll('.card-hover').forEach(el => { el.style.background = '#0a0a0a'; el.style.borderColor = '#222'; });
+            inputs.forEach(el => { el.style.background = '#0a0a0a'; el.style.borderColor = '#222'; el.style.color = '#fff'; });
+        } else {
+            shell.style.background = '#f9f9f9';
+            shell.style.color = '#1a1a1a';
+            sidebar.style.background = '#f9f9f9';
+            sidebar.style.borderColor = '#e5e5e5';
+            document.querySelectorAll('.card-hover').forEach(el => { el.style.background = '#fff'; el.style.borderColor = '#ddd'; });
+            inputs.forEach(el => { el.style.background = '#fff'; el.style.borderColor = '#ddd'; el.style.color = '#1a1a1a'; });
+        }
+    }
+
+    // ============ TOAST ============
+    function showToast(msg, type='success') {
+        const c = document.getElementById('toastContainer');
+        const t = document.createElement('div');
+        t.className = `toast toast-${type}`;
+        t.textContent = msg;
+        c.appendChild(t);
+        setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    // ============ NAVIGATION ============
+    function switchSection(name) {
+        currentSection = name;
+        document.querySelectorAll('.section-panel').forEach(s => s.classList.add('hidden'));
+        document.getElementById('sec-' + name)?.classList.remove('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.toggle('bg-zinc-900', b.dataset.section === name);
+            b.classList.toggle('text-white', b.dataset.section === name);
+            b.classList.toggle('text-zinc-500', b.dataset.section !== name);
+        });
+    }
+
+    // ============ MODAL ============
+    function openModal(type) {
+        const overlay = document.getElementById('modalOverlay');
+        const content = document.getElementById('modalContent');
+        overlay.classList.remove('hidden');
+        let html = '';
+
+        if (type === 'addItem') {
+            const collections = getCollections();
+            html = `
+      <h2 class="font-display text-xl font-bold mb-5">Add Garment</h2>
+      <form id="addItemForm" class="space-y-4">
+        <input class="input-noir" placeholder="Item name" id="fi_name" required>
+        <select class="input-noir" id="fi_type" required>
+          <option value="">Select Type</option>
+          ${Object.entries(clotheTypes).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join('')}
+        </select>
+        <select class="input-noir" id="fi_collection"><option value="">No Collection</option>${collections.map(c=>`<option value="${c}">${c}</option>`).join('')}</select>
+        <div class="grid grid-cols-2 gap-3">
+          <input class="input-noir" placeholder="Price" type="number" step="0.01" id="fi_price" required>
+          <input class="input-noir" placeholder="Quantity" type="number" id="fi_qty" required>
+        </div>
+        <input class="input-noir" placeholder="Sizes (e.g. S, M, L)" id="fi_size">
+        <input class="input-noir" placeholder="Color (e.g. Black, Navy Blue)" id="fi_color">
+        <div class="flex gap-3 justify-end mt-5">
+          <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded text-sm">Cancel</button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded text-sm font-medium" id="fi_submit">Add Item</button>
+        </div>
+      </form>`;
+        } else if (type === 'addCollection') {
+            html = `
+      <h2 class="font-display text-xl font-bold mb-5">New Collection</h2>
+      <form id="addCollectionForm" class="space-y-4">
+        <input class="input-noir" placeholder="Collection name" id="fc_name" required>
+        <div class="flex gap-3 justify-end mt-5">
+          <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded text-sm">Cancel</button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded text-sm font-medium" id="fc_submit">Create</button>
+        </div>
+      </form>`;
+        } else if (type === 'addOrder') {
+            html = `
+      <h2 class="font-display text-xl font-bold mb-5">New Order</h2>
+      <form id="addOrderForm" class="space-y-4">
+        <input class="input-noir" placeholder="Customer name" id="fo_cname" required>
+        <input class="input-noir" placeholder="Customer email" id="fo_cemail" type="email">
+        <input class="input-noir" placeholder="Item name" id="fo_item" required>
+        <input class="input-noir" placeholder="Total ($)" type="number" step="0.01" id="fo_total" required>
+        <select class="input-noir" id="fo_status">
+          <option value="new">New</option>
+          <option value="processing">Processing</option>
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+        </select>
+        <div class="flex gap-3 justify-end mt-5">
+          <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded text-sm">Cancel</button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded text-sm font-medium" id="fo_submit">Create Order</button>
+        </div>
+      </form>`;
+        } else if (type === 'addCustomer') {
+            html = `
+      <h2 class="font-display text-xl font-bold mb-5">Register Customer</h2>
+      <form id="addCustomerForm" class="space-y-4">
+        <input class="input-noir" placeholder="Full name" id="fcu_name" required>
+        <input class="input-noir" placeholder="Email" type="email" id="fcu_email" required>
+        <div class="flex gap-3 justify-end mt-5">
+          <button type="button" onclick="closeModal()" class="btn-ghost px-4 py-2 rounded text-sm">Cancel</button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded text-sm font-medium" id="fcu_submit">Register</button>
+        </div>
+      </form>`;
+        }
+
+        content.innerHTML = html;
+        lucide.createIcons();
+
+        // Bind forms
+        document.getElementById('addItemForm')?.addEventListener('submit', handleAddItem);
+        document.getElementById('addCollectionForm')?.addEventListener('submit', handleAddCollection);
+        document.getElementById('addOrderForm')?.addEventListener('submit', handleAddOrder);
+        document.getElementById('addCustomerForm')?.addEventListener('submit', handleAddCustomer);
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.add('hidden');
+    }
+    document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+    // ============ HANDLERS ============
+    async function handleAddItem(e) {
+        e.preventDefault();
+        if (allData.length >= 999) { showToast('Storage limit reached!', 'error'); return; }
+        const btn = document.getElementById('fi_submit');
+        btn.disabled = true; btn.textContent = 'Adding...';
+        const itemType = document.getElementById('fi_type').value;
+        const result = await window.dataSdk.create({
+            type: 'item', name: document.getElementById('fi_name').value,
+            item_type: itemType,
+            collection: document.getElementById('fi_collection').value,
+            price: parseFloat(document.getElementById('fi_price').value),
+            quantity: parseInt(document.getElementById('fi_qty').value),
+            size: document.getElementById('fi_size').value,
+            color: document.getElementById('fi_color').value,
+            created_at: new Date().toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: ''
+        });
+        if (result.isOk) { showToast('Garment added'); closeModal(); }
+        else { showToast('Failed to add', 'error'); btn.disabled = false; btn.textContent = 'Add Item'; }
+    }
+
+    async function handleAddCollection(e) {
+        e.preventDefault();
+        if (allData.length >= 999) { showToast('Storage limit reached!', 'error'); return; }
+        const btn = document.getElementById('fc_submit');
+        btn.disabled = true; btn.textContent = 'Creating...';
+        const result = await window.dataSdk.create({
+            type: 'collection', name: document.getElementById('fc_name').value,
+            collection: '', price: 0, quantity: 0, size: '', created_at: new Date().toISOString(),
+            status: '', customer_name: '', customer_email: '', order_total: 0, order_status: ''
+        });
+        if (result.isOk) { showToast('Collection created'); closeModal(); }
+        else { showToast('Failed to create', 'error'); btn.disabled = false; btn.textContent = 'Create'; }
+    }
+
+    async function handleAddOrder(e) {
+        e.preventDefault();
+        if (allData.length >= 999) { showToast('Storage limit reached!', 'error'); return; }
+        const btn = document.getElementById('fo_submit');
+        btn.disabled = true; btn.textContent = 'Creating...';
+        const result = await window.dataSdk.create({
+            type: 'order', name: document.getElementById('fo_item').value,
+            collection: '', price: 0, quantity: 0, size: '',
+            created_at: new Date().toISOString(), status: '',
+            customer_name: document.getElementById('fo_cname').value,
+            customer_email: document.getElementById('fo_cemail').value,
+            order_total: parseFloat(document.getElementById('fo_total').value),
+            order_status: document.getElementById('fo_status').value
+        });
+        if (result.isOk) { showToast('Order created'); closeModal(); }
+        else { showToast('Failed to create', 'error'); btn.disabled = false; btn.textContent = 'Create Order'; }
+    }
+
+    async function handleAddCustomer(e) {
+        e.preventDefault();
+        if (allData.length >= 999) { showToast('Storage limit reached!', 'error'); return; }
+        const btn = document.getElementById('fcu_submit');
+        btn.disabled = true; btn.textContent = 'Registering...';
+        const result = await window.dataSdk.create({
+            type: 'customer', name: document.getElementById('fcu_name').value,
+            collection: '', price: 0, quantity: 0, size: '',
+            created_at: new Date().toISOString(), status: '',
+            customer_name: document.getElementById('fcu_name').value,
+            customer_email: document.getElementById('fcu_email').value,
+            order_total: 0, order_status: ''
+        });
+        if (result.isOk) { showToast('Customer registered'); closeModal(); }
+        else { showToast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Register'; }
+    }
+
+    async function deleteRecord(id) {
+        const record = allData.find(r => r.__backendId === id);
+        if (!record) return;
+        if (deleteConfirmId !== id) {
+            deleteConfirmId = id;
+            renderAll();
+            return;
+        }
+        deleteConfirmId = null;
+        const result = await window.dataSdk.delete(record);
+        if (result.isOk) showToast('Deleted');
+        else showToast('Delete failed', 'error');
+    }
+
+    function cancelDelete() { deleteConfirmId = null; renderAll(); }
+
+    async function changeQuantity(id, delta) {
+        const record = allData.find(r => r.__backendId === id);
+        if (!record) return;
+        const newQty = Math.max(0, (record.quantity || 0) + delta);
+        const result = await window.dataSdk.update({ ...record, quantity: newQty });
+        if (!result.isOk) showToast('Update failed', 'error');
+    }
+
+    async function updateOrderStatus(id, newStatus) {
+        const record = allData.find(r => r.__backendId === id);
+        if (!record) return;
+        const result = await window.dataSdk.update({ ...record, order_status: newStatus });
+        if (result.isOk) showToast('Status updated');
+        else showToast('Update failed', 'error');
+    }
+
+    // ============ FILTERS ============
+    function getItems() { return allData.filter(r => r.type === 'item'); }
+    function getCollections() { return [...new Set(allData.filter(r => r.type === 'collection').map(r => r.name))]; }
+    function getOrders() { return allData.filter(r => r.type === 'order'); }
+    function getCustomers() { return allData.filter(r => r.type === 'customer'); }
+
+    function filterOrders(filter) {
+        currentOrderFilter = filter;
+        document.querySelectorAll('[data-filter]').forEach(b => {
+            b.classList.toggle('active', b.dataset.filter === filter);
+        });
+        renderOrders();
+    }
+
+    // ============ RENDER ============
+    function renderAll() {
+        renderDashboard();
+        renderInventory();
+        renderCollections();
+        renderOrders();
+        renderCustomers();
+    }
+
+    function renderDashboard() {
+        const items = getItems();
+        const collections = getCollections();
+        const orders = getOrders();
+        const customers = getCustomers();
+        const completedOrders = orders.filter(o => o.order_status === 'completed').length;
+        const pendingOrders = orders.filter(o => o.order_status === 'new' || o.order_status === 'processing' || o.order_status === 'pending').length;
+
+        // Revenue calculation
+        const totalRevenue = orders.reduce((sum, o) => sum + (o.order_total || 0), 0);
+
+        document.getElementById('statRevenue').textContent = '$' + totalRevenue.toLocaleString('en-US');
+        document.getElementById('statOrders').textContent = orders.length;
+        document.getElementById('statItems').textContent = items.length;
+        document.getElementById('statCustomers').textContent = customers.length;
+        document.getElementById('statCollections').textContent = collections.length;
+        document.getElementById('collectionsLabel').textContent = collections.length + ' collection' + (collections.length !== 1 ? 's' : '');
+        document.getElementById('newCustomersLabel').textContent = '↑ ' + customers.length + ' new';
+
+        const maxBar = Math.max(items.length, collections.length, customers.length, 1);
+        document.getElementById('barCollections').style.width = (collections.length / maxBar * 100) + '%';
+
+        // Shop health gauge
+        const totalStock = items.reduce((s, i) => s + (i.quantity || 0), 0);
+        const health = Math.min(100, Math.round((items.length * 10 + completedOrders * 15 + customers.length * 5 + collections.length * 10)));
+        const offset = 126 - (126 * health / 100);
+        document.getElementById('gaugeArc').style.strokeDashoffset = offset;
+        document.getElementById('gaugeText').textContent = health + '%';
+
+        // Story
+        const stories = [
+            items.length === 0 ? "Every garment tells a story of shadow and light — your atelier awaits its first chapter." : null,
+            items.length > 0 && items.length < 5 ? `With ${items.length} piece${items.length > 1 ? 's' : ''} in the vault, your collection whispers of things to come.` : null,
+            items.length >= 5 && orders.length === 0 ? `${items.length} garments hang in silence, waiting for their first admirer.` : null,
+            orders.length > 0 && completedOrders === 0 ? `The orders flow like ink — ${orders.length} chapters unfolding, none yet complete.` : null,
+            completedOrders > 0 ? `${completedOrders} fulfilled dreams, ${totalStock} pieces in reserve. The atelier breathes.` : null,
+        ].filter(Boolean);
+        document.getElementById('shopStory').textContent = `"${stories[stories.length - 1] || 'Begin.'}"`;
+        document.getElementById('storyMood').textContent = health > 70 ? '● Thriving' : health > 30 ? '◐ Growing' : '○ Awakening';
+
+        // Date
+        document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // Recent activity
+        const recent = [...allData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 5);
+        const actEl = document.getElementById('recentActivity');
+        if (recent.length === 0) {
+            actEl.innerHTML = '<div class="text-zinc-600 text-sm italic">No activity yet — your canvas is blank</div>';
+        } else {
+            actEl.innerHTML = recent.map(r => {
+                const icon = r.type === 'item' ? 'shirt' : r.type === 'order' ? 'shopping-bag' : r.type === 'collection' ? 'layers' : 'user';
+                const time = new Date(r.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                return `<div class="flex items-center gap-3 text-sm"><i data-lucide="${icon}" style="width:14px;height:14px" class="text-zinc-500"></i><span class="text-zinc-300">${r.name || r.customer_name}</span><span class="text-zinc-600 text-xs ml-auto">${time}</span></div>`;
+            }).join('');
+            lucide.createIcons();
+        }
+    }
+
+    function renderInventory() {
+        const items = getItems();
+        const grid = document.getElementById('inventoryGrid');
+        if (items.length === 0) {
+            grid.innerHTML = '<div class="text-zinc-600 text-sm italic col-span-3 text-center py-20">No items yet — add your first garment</div>';
+            return;
+        }
+        grid.innerHTML = items.map((item, i) => {
+            const typeInfo = clotheTypes[item.item_type] || clotheTypes.shirt;
+            const typeLabel = typeInfo.label;
+            const isConfirming = deleteConfirmId === item.__backendId;
+            return `<div class="card-hover rounded-lg bg-zinc-950 overflow-hidden anim-slide-in" style="animation-delay:${i * 0.05}s">
+      <div class="clothes-img flex items-center justify-center" style="color: ${typeInfo.colors[0]};">${typeInfo.svg}</div>
+      <div class="p-4">
+        <div class="flex justify-between items-start mb-1">
+          <h3 class="font-display font-bold text-sm">${item.name}</h3>
+          <span class="text-xs text-zinc-500 bg-zinc-900 px-2 py-1 rounded">${typeLabel}</span>
+        </div>
+        <div class="text-zinc-400 text-xs mb-1">${item.collection || 'No collection'}</div>
+        <div class="text-zinc-500 text-xs mb-3 flex gap-2">
+          <span>${item.color || 'Color not specified'}</span>
+          <span>·</span>
+          <span>${item.size || 'One size'}</span>
+          <span>·</span>
+          <span>$${(item.price || 0).toFixed(2)}</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <button onclick="changeQuantity('${item.__backendId}', -1)" class="w-6 h-6 rounded border border-zinc-700 flex items-center justify-center text-xs hover:border-white transition-colors">−</button>
+            <span class="text-sm font-medium w-8 text-center">${item.quantity || 0}</span>
+            <button onclick="changeQuantity('${item.__backendId}', 1)" class="w-6 h-6 rounded border border-zinc-700 flex items-center justify-center text-xs hover:border-white transition-colors">+</button>
+          </div>
+          ${isConfirming
+                ? `<div class="confirm-bar"><span class="text-xs text-red-400">Delete?</span><button onclick="deleteRecord('${item.__backendId}')" class="text-xs text-red-400 hover:text-red-300">Yes</button><button onclick="cancelDelete()" class="text-xs text-zinc-400 hover:text-white">No</button></div>`
+                : `<button onclick="deleteRecord('${item.__backendId}')" class="btn-danger px-3 py-1 rounded text-xs">Delete</button>`
+            }
+        </div>
+      </div>
+    </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function renderCollections() {
+        const collectionRecords = allData.filter(r => r.type === 'collection');
+        const items = getItems();
+        const grid = document.getElementById('collectionsGrid');
+        if (collectionRecords.length === 0) {
+            grid.innerHTML = '<div class="text-zinc-600 text-sm italic col-span-2 text-center py-20">No collections yet</div>';
+            return;
+        }
+        grid.innerHTML = collectionRecords.map((col, i) => {
+            const colItems = items.filter(it => it.collection === col.name);
+            const totalStock = colItems.reduce((s, it) => s + (it.quantity || 0), 0);
+            const isConfirming = deleteConfirmId === col.__backendId;
+            return `<div class="card-hover rounded-lg bg-zinc-950 p-6 anim-slide-in" style="animation-delay:${i * 0.05}s">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h3 class="font-display text-xl font-bold">${col.name}</h3>
+          <p class="text-zinc-500 text-xs mt-1">${colItems.length} item${colItems.length !== 1 ? 's' : ''} · ${totalStock} in stock</p>
+        </div>
+        ${isConfirming
+                ? `<div class="confirm-bar"><span class="text-xs text-red-400">Delete?</span><button onclick="deleteRecord('${col.__backendId}')" class="text-xs text-red-400">Yes</button><button onclick="cancelDelete()" class="text-xs text-zinc-400">No</button></div>`
+                : `<button onclick="deleteRecord('${col.__backendId}')" class="btn-danger px-3 py-1 rounded text-xs">Delete</button>`
+            }
+      </div>
+      <div class="h-px bg-zinc-800 mb-3"></div>
+      <div class="space-y-2">${colItems.length === 0 ? '<div class="text-zinc-600 text-xs italic">Empty collection</div>' :
+                colItems.slice(0, 3).map(it => `<div class="flex justify-between text-xs"><span class="text-zinc-300">${it.name}</span><span class="text-zinc-500">×${it.quantity || 0}</span></div>`).join('') +
+                (colItems.length > 3 ? `<div class="text-zinc-600 text-xs">+${colItems.length - 3} more</div>` : '')
+            }</div>
+    </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function renderOrders() {
+        let orders = getOrders();
+        if (currentOrderFilter !== 'all') orders = orders.filter(o => o.order_status === currentOrderFilter);
+        orders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        const tbody = document.getElementById('ordersTableBody');
+        if (orders.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-zinc-600 italic">No orders found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = orders.map(o => {
+            const statusColors = { new: 'text-white', processing: 'text-zinc-300', pending: 'text-zinc-500', completed: 'text-zinc-400' };
+            const statusDot = { new: 'bg-white', processing: 'bg-zinc-400', pending: 'bg-zinc-600', completed: 'bg-zinc-700' };
+            const date = new Date(o.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const isConfirming = deleteConfirmId === o.__backendId;
+            return `<tr class="order-row border-b border-zinc-900">
+      <td class="p-4"><div class="font-medium text-sm">${o.customer_name}</div><div class="text-zinc-600 text-xs">${o.customer_email || ''}</div></td>
+      <td class="p-4 text-zinc-300">${o.name}</td>
+      <td class="p-4">$${(o.order_total || 0).toFixed(2)}</td>
+      <td class="p-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${
+                o.order_status === 'new' ? 'bg-blue-900/30 text-blue-300 border border-blue-700' :
+                    o.order_status === 'processing' ? 'bg-purple-900/30 text-purple-300 border border-purple-700' :
+                        o.order_status === 'pending' ? 'bg-amber-900/30 text-amber-300 border border-amber-700' :
+                            o.order_status === 'completed' ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-700' :
+                                'bg-zinc-800 text-zinc-400'
+            }">
+          <span class="w-2 h-2 rounded-full ${
+                o.order_status === 'new' ? 'bg-blue-400' :
+                    o.order_status === 'processing' ? 'bg-purple-400' :
+                        o.order_status === 'pending' ? 'bg-amber-400' :
+                            o.order_status === 'completed' ? 'bg-emerald-400' :
+                                'bg-zinc-500'
+            }"></span>
+          ${o.order_status || 'unknown'}
+        </div>
+      </td>
+      <td class="p-4 text-zinc-500 text-xs">${date}</td>
+      <td class="p-4 text-right">
+        <div class="flex items-center gap-2 justify-end">
+          <select onchange="updateOrderStatus('${o.__backendId}', this.value)" class="input-noir text-xs py-1 px-2 w-28">
+            ${['new','processing','pending','completed'].map(s => `<option value="${s}" ${o.order_status === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+          ${isConfirming
+                ? `<div class="confirm-bar"><span class="text-xs text-red-400">Delete?</span><button onclick="deleteRecord('${o.__backendId}')" class="text-xs text-red-400">Yes</button><button onclick="cancelDelete()" class="text-xs text-zinc-400">No</button></div>`
+                : `<button onclick="deleteRecord('${o.__backendId}')" class="text-zinc-600 hover:text-red-400 transition-colors"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>`
+            }
+        </div>
+      </td>
+    </tr>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    function renderCustomers() {
+        const customers = getCustomers();
+        const grid = document.getElementById('customersGrid');
+        if (customers.length === 0) {
+            grid.innerHTML = '<div class="text-zinc-600 text-sm italic col-span-3 text-center py-20">No registered customers</div>';
+            return;
+        }
+        grid.innerHTML = customers.map((c, i) => {
+            const initial = (c.name || 'U')[0].toUpperCase();
+            const orders = getOrders().filter(o => o.customer_email === c.customer_email);
+            const isConfirming = deleteConfirmId === c.__backendId;
+            return `<div class="card-hover rounded-lg bg-zinc-950 p-5 anim-slide-in" style="animation-delay:${i * 0.05}s">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center font-display font-black text-sm">${initial}</div>
+        <div>
+          <div class="font-medium text-sm">${c.name}</div>
+          <div class="text-zinc-600 text-xs">${c.customer_email}</div>
+        </div>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-zinc-500 text-xs">${orders.length} order${orders.length !== 1 ? 's' : ''}</span>
+        ${isConfirming
+                ? `<div class="confirm-bar"><span class="text-xs text-red-400">Remove?</span><button onclick="deleteRecord('${c.__backendId}')" class="text-xs text-red-400">Yes</button><button onclick="cancelDelete()" class="text-xs text-zinc-400">No</button></div>`
+                : `<button onclick="deleteRecord('${c.__backendId}')" class="text-zinc-600 hover:text-red-400 transition-colors text-xs">Remove</button>`
+            }
+      </div>
+    </div>`;
+        }).join('');
+        lucide.createIcons();
+    }
+
+    // ============ DATA SDK ============
+    const dataHandler = {
+        onDataChanged(data) {
+            allData = data;
+            renderAll();
+        }
+    };
+
+    // ============ ELEMENT SDK ============
+    const defaultConfig = {
+        shop_name: 'NOIR ATELIER',
+        shop_tagline: 'Curated Darkness',
+        background_color: '#000000',
+        surface_color: '#0a0a0a',
+        text_color: '#ffffff',
+        primary_action_color: '#ffffff',
+        secondary_action_color: '#888888',
+        font_family: 'Playfair Display',
+        font_size: 16
+    };
+
+    function applyConfig(config) {
+        document.getElementById('sidebarShopName').textContent = config.shop_name || defaultConfig.shop_name;
+        document.getElementById('sidebarTagline').textContent = config.shop_tagline || defaultConfig.shop_tagline;
+        document.getElementById('orbLabel').textContent = (config.shop_name || defaultConfig.shop_name)[0];
+
+        const bg = config.background_color || defaultConfig.background_color;
+        const surface = config.surface_color || defaultConfig.surface_color;
+        const text = config.text_color || defaultConfig.text_color;
+        const primary = config.primary_action_color || defaultConfig.primary_action_color;
+        const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+        const font = config.font_family || defaultConfig.font_family;
+        const size = config.font_size || defaultConfig.font_size;
+
+        const shell = document.querySelector('.app-shell');
+        shell.style.background = bg;
+        shell.style.color = text;
+        shell.style.fontFamily = `${font}, DM Sans, sans-serif`;
+        shell.style.fontSize = size + 'px';
+
+        document.querySelectorAll('.font-display').forEach(el => { el.style.fontFamily = `${font}, Playfair Display, serif`; });
+        document.querySelectorAll('.stat-card, .card-hover').forEach(el => { el.style.background = surface; });
+        document.querySelectorAll('.btn-primary').forEach(el => { el.style.background = primary; el.style.color = bg; });
+        document.querySelectorAll('.tab-btn.active::after, .nav-btn.bg-zinc-900').forEach(() => {});
+        document.querySelectorAll('h1').forEach(el => { el.style.fontSize = (size * 2.5) + 'px'; });
+        document.querySelectorAll('h2').forEach(el => { el.style.fontSize = (size * 1.3) + 'px'; });
+    }
+
+    window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => { applyConfig(config); },
+        mapToCapabilities: (config) => ({
+            recolorables: [
+                { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+                { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+                { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+                { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+                { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } },
+            ],
+            borderables: [],
+            fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+            fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } },
+        }),
+        mapToEditPanelValues: (config) => new Map([
+            ['shop_name', config.shop_name || defaultConfig.shop_name],
+            ['shop_tagline', config.shop_tagline || defaultConfig.shop_tagline],
+        ])
+    });
+
+    // Init Data SDK
+    (async () => {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) console.error('Data SDK init failed');
+
+        // Seed default data for demo
+        const existingData = allData;
+        if (existingData.length === 0) {
+            seedDefaultData();
+        }
+    })();
+
+    async function seedDefaultData() {
+        const defaultItems = [
+            { type: 'collection', name: 'Obsidian Essence', collection: '', price: 0, quantity: 0, size: '', color: '', item_type: '', created_at: new Date(Date.now() - 5*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'item', name: 'Midnight Wool Coat', collection: 'Obsidian Essence', price: 280, quantity: 12, size: 'XS, S, M, L, XL', color: 'Deep Black', item_type: 'coat', created_at: new Date(Date.now() - 4*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'item', name: 'Charcoal Silk Blouse', collection: 'Obsidian Essence', price: 160, quantity: 8, size: 'S, M, L', color: 'Charcoal Gray', item_type: 'blouse', created_at: new Date(Date.now() - 3*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'collection', name: 'Nocturne', collection: '', price: 0, quantity: 0, size: '', color: '', item_type: '', created_at: new Date(Date.now() - 5*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'item', name: 'Raven Denim', collection: 'Nocturne', price: 130, quantity: 15, size: '28, 30, 32, 34, 36', color: 'Navy Blue', item_type: 'jeans', created_at: new Date(Date.now() - 2*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'item', name: 'Shadow Cashmere Sweater', collection: 'Nocturne', price: 240, quantity: 6, size: 'S, M, L', color: 'Charcoal', item_type: 'sweater', created_at: new Date(Date.now() - 2*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'item', name: 'Elegant Black Dress', collection: 'Nocturne', price: 320, quantity: 4, size: 'XS, S, M, L', color: 'Pure Black', item_type: 'dress', created_at: new Date(Date.now() - 1*24*60*60*1000).toISOString(), status: '', customer_name: '', customer_email: '', order_total: 0, order_status: '' },
+            { type: 'customer', name: 'Emma Sterling', collection: '', price: 0, quantity: 0, size: '', color: '', item_type: '', created_at: new Date(Date.now() - 10*24*60*60*1000).toISOString(), status: '', customer_name: 'Emma Sterling', customer_email: 'emma@example.com', order_total: 0, order_status: '' },
+            { type: 'customer', name: 'Marcus Divine', collection: '', price: 0, quantity: 0, size: '', color: '', item_type: '', created_at: new Date(Date.now() - 8*24*60*60*1000).toISOString(), status: '', customer_name: 'Marcus Divine', customer_email: 'marcus@example.com', order_total: 0, order_status: '' },
+            { type: 'order', name: 'Midnight Wool Coat', collection: '', price: 280, quantity: 1, size: 'M', color: '', item_type: '', created_at: new Date(Date.now() - 1*24*60*60*1000).toISOString(), status: '', customer_name: 'Emma Sterling', customer_email: 'emma@example.com', order_total: 280, order_status: 'processing' },
+            { type: 'order', name: 'Raven Denim + Shadow Cashmere Sweater', collection: '', price: 370, quantity: 2, size: 'Mixed', color: '', item_type: '', created_at: new Date(Date.now() - 0.5*24*60*60*1000).toISOString(), status: '', customer_name: 'Marcus Divine', customer_email: 'marcus@example.com', order_total: 370, order_status: 'new' },
+            { type: 'order', name: 'Elegant Black Dress', collection: '', price: 320, quantity: 1, size: 'S', color: '', item_type: '', created_at: new Date(Date.now() - 3*24*60*60*1000).toISOString(), status: '', customer_name: 'Sophie Chen', customer_email: 'sophie@example.com', order_total: 320, order_status: 'completed' },
+        ];
+
+        for (const item of defaultItems) {
+            await window.dataSdk.create(item);
+        }
+    }
+
+    // Init nav + icons
+    switchSection('dashboard');
+    lucide.createIcons();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9f07f934f326997d',t:'MTc3Njg5NTk4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOIR — Order</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&amp;family=DM+Sans:wght@300;400;500;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { font-family: 'DM Sans', sans-serif; }
+    .font-display { font-family: 'Playfair Display', serif; }
+
+    @keyframes slideIn { from { opacity:0; transform: translateY(30px); } to { opacity:1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    @keyframes scaleIn { from { opacity:0; transform: scale(0.9); } to { opacity:1; transform: scale(1); } }
+    @keyframes pulseGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 20px 5px rgba(255,255,255,0.05); } }
+    @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+    @keyframes checkPop { 0% { transform: scale(0) rotate(-45deg); } 60% { transform: scale(1.2) rotate(0); } 100% { transform: scale(1) rotate(0); } }
+
+    .anim-slide { animation: slideIn 0.6s ease forwards; }
+    .anim-fade { animation: fadeIn 0.5s ease forwards; }
+    .anim-scale { animation: scaleIn 0.5s ease forwards; }
+    .anim-check { animation: checkPop 0.5s ease forwards; }
+
+    .step-hidden { display: none; }
+    .step-active { display: flex; }
+
+    .marquee-track { display: flex; animation: marquee 20s linear infinite; }
+    .marquee-track:hover { animation-play-state: paused; }
+
+    .cloth-card { transition: all 0.4s cubic-bezier(0.25,0.8,0.25,1); }
+    .cloth-card:hover { transform: translateY(-6px); }
+
+    .btn-main { transition: all 0.3s ease; position: relative; overflow: hidden; }
+    .btn-main::after { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(255,255,255,0.1); border-radius: 50%; transform: translate(-50%,-50%); transition: width 0.5s, height 0.5s; }
+    .btn-main:hover::after { width: 300px; height: 300px; }
+
+    .radio-custom:checked + label { border-color: #000; background: #000; color: #fff; }
+    .radio-custom:checked + label .radio-dot { background: #fff; }
+
+    .notification-bar { animation: slideIn 0.4s ease forwards; }
+
+    .progress-line { transition: width 0.5s ease; }
+
+    input:focus, select:focus { outline: none; border-color: #000; }
+
+    .item-remove { transition: all 0.3s ease; }
+    .item-remove:hover { background: #000; color: #fff; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #f5f5f5; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+    .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+    .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+    .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+    .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+    .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+</head>
+<body class="h-full bg-white text-black">
+<div id="app" class="h-full w-full flex flex-col overflow-auto"><!-- HEADER -->
+  <header class="w-full border-b border-black/10 px-6 py-4 flex items-center justify-between flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <svg id="logo-svg" width="36" height="36" viewbox="0 0 36 36" fill="none"><rect width="36" height="36" rx="2" fill="#000" /> <path d="M8 26V10h4l6 10 6-10h4v16h-4V16l-6 10-6-10v10H8z" fill="#fff" />
+      </svg><span id="brand-name" class="font-display text-xl font-bold tracking-tight">MAISON NOIR</span>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-black/50"><i data-lucide="lock" style="width:14px;height:14px"></i> <span>Secure Checkout</span>
+    </div>
+  </header><!-- PROGRESS BAR -->
+  <div class="w-full px-6 py-3 flex-shrink-0">
+    <div class="flex items-center justify-between mb-2"><span id="step-label" class="text-xs font-medium tracking-widest uppercase">Order Review</span> <span id="step-count" class="text-xs text-black/40">Step 1 of 4</span>
+    </div>
+    <div class="w-full h-1 bg-black/10 rounded-full overflow-hidden">
+      <div id="progress-bar" class="h-full bg-black rounded-full progress-line" style="width:25%"></div>
+    </div>
+  </div><!-- NOTIFICATION BAR -->
+  <div id="notification-area" class="px-6 flex-shrink-0"></div><!-- STEP 1: ORDER REVIEW -->
+  <div id="step-1" class="step-active flex-1 flex flex-col px-6 pb-6">
+    <div class="flex-1 overflow-auto"><!-- Marquee banner -->
+      <div class="w-full overflow-hidden border-y border-black/10 py-2 my-4">
+        <div class="marquee-track whitespace-nowrap"><span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">FREE SHIPPING OVER $100</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">14-DAY RETURNS</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">WORLDWIDE DELIVERY</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">FREE SHIPPING OVER $100</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">14-DAY RETURNS</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">WORLDWIDE DELIVERY</span> <span class="text-xs tracking-[0.3em] uppercase text-black/30 mx-8">✦</span>
+        </div>
+      </div>
+      <h2 class="font-display text-2xl font-bold mb-1 anim-slide">Your Bag</h2>
+      <p class="text-sm text-black/50 mb-5 anim-slide stagger-1">Review your selected pieces</p>
+      <div id="order-items" class="space-y-4"></div><!-- Order Summary -->
+      <div class="mt-6 border-t border-black/10 pt-4 space-y-2 anim-slide stagger-3">
+        <div class="flex justify-between text-sm">
+          <span class="text-black/50">Subtotal</span><span id="subtotal">$0</span>
+        </div>
+        <div class="flex justify-between text-sm">
+          <span class="text-black/50">Delivery</span><span id="delivery-cost" class="text-black/50">Calculated next</span>
+        </div>
+        <div class="flex justify-between text-base font-bold border-t border-black/10 pt-3 mt-3"><span>Total</span><span id="total">$0</span>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-4 flex-shrink-0"><button onclick="showNotification('🛍️ Keep shopping — your bag is saved!', 'info')" class="flex-1 border border-black/20 text-black py-3 text-sm font-medium tracking-wider uppercase btn-main hover:bg-black/5 rounded">Continue Shopping</button> <button onclick="goToStep(2)" class="flex-1 bg-black text-white py-3 text-sm font-medium tracking-wider uppercase btn-main rounded">Proceed</button>
+    </div>
+  </div><!-- STEP 2: PAYMENT -->
+  <div id="step-2" class="step-hidden flex-1 flex flex-col px-6 pb-6">
+    <div class="flex-1 overflow-auto">
+      <h2 class="font-display text-2xl font-bold mb-1 anim-slide">Payment Method</h2>
+      <p class="text-sm text-black/50 mb-6 anim-slide stagger-1">Choose how you'd like to pay</p>
+      <div class="space-y-3" id="payment-methods">
+        <div class="anim-slide stagger-1"><input type="radio" name="payment" id="pay-card" value="card" class="radio-custom sr-only" checked> <label for="pay-card" class="flex items-center gap-4 border-2 border-black/10 rounded-lg p-4 cursor-pointer transition-all">
+          <div class="w-10 h-10 rounded-full border-2 border-black/20 flex items-center justify-center flex-shrink-0">
+            <div class="radio-dot w-4 h-4 rounded-full transition-all"></div>
+          </div>
+          <div class="flex-1">
+            <div class="font-medium text-sm">
+              Credit / Debit Card
+            </div>
+            <div class="text-xs text-black/40 mt-0.5">
+              Visa, Mastercard, Amex
+            </div>
+          </div>
+          <div class="flex gap-1">
+            <svg width="32" height="20" viewbox="0 0 32 20" fill="none">
+              <rect width="32" height="20" rx="3" fill="#1a1f71" /><path d="M12 14l2-8h2l-2 8h-2zm7-8l-2 5.5-.3-1.5-.8-4h-2l3 8h2l3-8h-2zm-9 0H7l-.1.5c1 .3 1.8.6 2.4 1l2 6.5h2l3-8h-2l-2 5.5L10 6z" fill="#fff" />
+            </svg>
+            <svg width="32" height="20" viewbox="0 0 32 20" fill="none">
+              <rect width="32" height="20" rx="3" fill="#000" /><circle cx="12" cy="10" r="6" fill="#eb001b" /><circle cx="20" cy="10" r="6" fill="#f79e1b" /><path d="M16 5.6a6 6 0 010 8.8 6 6 0 000-8.8z" fill="#ff5f00" />
+            </svg>
+          </div></label>
+        </div>
+        <div class="anim-slide stagger-2"><input type="radio" name="payment" id="pay-cod" value="cod" class="radio-custom sr-only"> <label for="pay-cod" class="flex items-center gap-4 border-2 border-black/10 rounded-lg p-4 cursor-pointer transition-all">
+          <div class="w-10 h-10 rounded-full border-2 border-black/20 flex items-center justify-center flex-shrink-0">
+            <div class="radio-dot w-4 h-4 rounded-full transition-all"></div>
+          </div>
+          <div class="flex-1">
+            <div class="font-medium text-sm">
+              Cash on Delivery
+            </div>
+            <div class="text-xs text-black/40 mt-0.5">
+              Pay when your order arrives
+            </div>
+          </div><i data-lucide="banknote" style="width:24px;height:24px;color:#999"></i> </label>
+        </div>
+        <div class="anim-slide stagger-3"><input type="radio" name="payment" id="pay-wallet" value="wallet" class="radio-custom sr-only"> <label for="pay-wallet" class="flex items-center gap-4 border-2 border-black/10 rounded-lg p-4 cursor-pointer transition-all">
+          <div class="w-10 h-10 rounded-full border-2 border-black/20 flex items-center justify-center flex-shrink-0">
+            <div class="radio-dot w-4 h-4 rounded-full transition-all"></div>
+          </div>
+          <div class="flex-1">
+            <div class="font-medium text-sm">
+              Digital Wallet
+            </div>
+            <div class="text-xs text-black/40 mt-0.5">
+              Apple Pay, Google Pay
+            </div>
+          </div><i data-lucide="wallet" style="width:24px;height:24px;color:#999"></i> </label>
+        </div>
+        <div class="anim-slide stagger-4"><input type="radio" name="payment" id="pay-transfer" value="transfer" class="radio-custom sr-only"> <label for="pay-transfer" class="flex items-center gap-4 border-2 border-black/10 rounded-lg p-4 cursor-pointer transition-all">
+          <div class="w-10 h-10 rounded-full border-2 border-black/20 flex items-center justify-center flex-shrink-0">
+            <div class="radio-dot w-4 h-4 rounded-full transition-all"></div>
+          </div>
+          <div class="flex-1">
+            <div class="font-medium text-sm">
+              Bank Transfer
+            </div>
+            <div class="text-xs text-black/40 mt-0.5">
+              Direct bank payment
+            </div>
+          </div><i data-lucide="landmark" style="width:24px;height:24px;color:#999"></i> </label>
+        </div>
+      </div><!-- Card details (demo) -->
+      <div id="card-details" class="mt-5 p-4 border border-black/10 rounded-lg bg-black/[0.02]">
+        <p class="text-xs text-black/40 mb-3 flex items-center gap-1"><i data-lucide="info" style="width:12px;height:12px"></i> Demo — no real data collected</p>
+        <div class="space-y-3">
+          <div><label class="text-xs font-medium tracking-wider uppercase text-black/60 block mb-1" for="card-name">Cardholder Name</label> <input id="card-name" type="text" placeholder="Jane Doe" class="w-full border border-black/15 rounded px-3 py-2.5 text-sm bg-white">
+          </div>
+          <div><label class="text-xs font-medium tracking-wider uppercase text-black/60 block mb-1" for="card-num">Card Number</label> <input id="card-num" type="text" placeholder="•••• •••• •••• ••••" maxlength="19" class="w-full border border-black/15 rounded px-3 py-2.5 text-sm bg-white font-mono tracking-widest">
+          </div>
+          <div class="flex gap-3">
+            <div class="flex-1"><label class="text-xs font-medium tracking-wider uppercase text-black/60 block mb-1" for="card-exp">Expiry</label> <input id="card-exp" type="text" placeholder="MM/YY" maxlength="5" class="w-full border border-black/15 rounded px-3 py-2.5 text-sm bg-white">
+            </div>
+            <div class="flex-1"><label class="text-xs font-medium tracking-wider uppercase text-black/60 block mb-1" for="card-cvv">CVV</label> <input id="card-cvv" type="text" placeholder="•••" maxlength="3" class="w-full border border-black/15 rounded px-3 py-2.5 text-sm bg-white">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-4 flex-shrink-0"><button onclick="goToStep(1)" class="flex-1 border border-black/20 py-3 text-sm font-medium tracking-wider uppercase btn-main hover:bg-black/5 rounded">Back</button> <button onclick="goToStep(3)" class="flex-1 bg-black text-white py-3 text-sm font-medium tracking-wider uppercase btn-main rounded">Continue</button>
+    </div>
+  </div><!-- STEP 3: DELIVERY & POLICY -->
+  <div id="step-3" class="step-hidden flex-1 flex flex-col px-6 pb-6">
+    <div class="flex-1 overflow-auto">
+      <h2 class="font-display text-2xl font-bold mb-1 anim-slide">Delivery &amp; Policy</h2>
+      <p class="text-sm text-black/50 mb-6 anim-slide stagger-1">Important information before you confirm</p><!-- Delivery pricing -->
+      <div class="anim-slide stagger-1 border border-black/10 rounded-lg overflow-hidden mb-4">
+        <div class="bg-black text-white px-4 py-3 flex items-center gap-2"><i data-lucide="truck" style="width:18px;height:18px"></i> <span class="text-sm font-medium tracking-wider uppercase">Delivery Pricing</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="flex justify-between items-center pb-3 border-b border-black/5">
+            <div>
+              <div class="text-sm font-medium">
+                Standard Delivery
+              </div>
+              <div class="text-xs text-black/40 mt-0.5">
+                5–7 business days
+              </div>
+            </div><span id="delivery-standard" class="text-sm font-bold">$4.99</span>
+          </div>
+          <div class="flex justify-between items-center pb-3 border-b border-black/5">
+            <div>
+              <div class="text-sm font-medium">
+                Express Delivery
+              </div>
+              <div class="text-xs text-black/40 mt-0.5">
+                2–3 business days
+              </div>
+            </div><span class="text-sm font-bold">$9.99</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-sm font-medium">
+                Free Shipping
+              </div>
+              <div id="delivery-free-note" class="text-xs text-black/40 mt-0.5">
+                Orders over $100
+              </div>
+            </div><span class="text-sm font-bold text-black/40">$0.00</span>
+          </div>
+        </div>
+      </div><!-- Exchange & Return -->
+      <div class="anim-slide stagger-2 border border-black/10 rounded-lg overflow-hidden mb-4">
+        <div class="bg-black text-white px-4 py-3 flex items-center gap-2"><i data-lucide="refresh-cw" style="width:18px;height:18px"></i> <span class="text-sm font-medium tracking-wider uppercase">Exchange &amp; Return Policy</span>
+        </div>
+        <div class="p-4 space-y-3 text-sm text-black/70 leading-relaxed" id="policy-text">
+          <p>✦ <strong>14-day return window</strong> from the date of delivery for all unworn items with tags attached.</p>
+          <p>✦ <strong>Free exchanges</strong> on all orders — simply request a size or color swap.</p>
+          <p>✦ <strong>Refunds</strong> processed within 5 business days of receiving the returned item.</p>
+          <p>✦ <strong>Sale items</strong> are eligible for exchange only, no refunds.</p>
+          <p>✦ <strong>Damaged items</strong> — contact us within 48 hours for immediate replacement.</p>
+        </div>
+      </div><!-- Delivery selection -->
+      <div class="anim-slide stagger-3">
+        <p class="text-xs font-medium tracking-wider uppercase text-black/60 mb-2">Select Delivery Speed</p>
+        <div class="space-y-2"><label class="flex items-center gap-3 border border-black/10 rounded-lg p-3 cursor-pointer hover:border-black/30 transition-all"> <input type="radio" name="delivery" value="standard" checked class="accent-black w-4 h-4"> <span class="text-sm">Standard — $4.99</span> </label> <label class="flex items-center gap-3 border border-black/10 rounded-lg p-3 cursor-pointer hover:border-black/30 transition-all"> <input type="radio" name="delivery" value="express" class="accent-black w-4 h-4"> <span class="text-sm">Express — $9.99</span> </label>
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-4 flex-shrink-0"><button onclick="goToStep(2)" class="flex-1 border border-black/20 py-3 text-sm font-medium tracking-wider uppercase btn-main hover:bg-black/5 rounded">Back</button> <button onclick="goToStep(4)" class="flex-1 bg-black text-white py-3 text-sm font-medium tracking-wider uppercase btn-main rounded">Confirm Order</button>
+    </div>
+  </div><!-- STEP 4: CONFIRMATION -->
+  <div id="step-4" class="step-hidden flex-1 flex flex-col items-center justify-center px-6 pb-6 text-center">
+    <div class="anim-scale">
+      <div class="w-20 h-20 rounded-full bg-black flex items-center justify-center mx-auto mb-6">
+        <svg class="anim-check" width="36" height="36" viewbox="0 0 36 36" fill="none">
+          <path d="M10 18l6 6 10-12" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+    </div>
+    <h2 class="font-display text-3xl font-bold mb-2 anim-slide stagger-1">Order Confirmed</h2>
+    <p class="text-sm text-black/50 mb-2 anim-slide stagger-2">Thank you for shopping with us</p>
+    <p class="text-xs text-black/30 mb-6 anim-slide stagger-3" id="order-number">Order #MN-2024-00847</p>
+    <div class="w-full max-w-xs space-y-3 anim-slide stagger-4">
+      <div class="border border-black/10 rounded-lg p-4 text-left">
+        <div class="text-xs text-black/40 uppercase tracking-wider mb-2">
+          Order Summary
+        </div>
+        <div id="confirm-summary" class="space-y-1 text-sm"></div>
+        <div class="border-t border-black/10 mt-3 pt-3 flex justify-between font-bold text-sm"><span>Total</span><span id="confirm-total">$0</span>
+        </div>
+      </div>
+      <div class="border border-black/10 rounded-lg p-4 text-left">
+        <div class="text-xs text-black/40 uppercase tracking-wider mb-2">
+          Delivery
+        </div>
+        <div class="text-sm" id="confirm-delivery">
+          Standard — 5-7 business days
+        </div>
+        <div class="text-sm mt-1" id="confirm-payment">
+          Paid via Credit Card
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6 w-full max-w-xs anim-slide stagger-5"><button onclick="saveOrder()" class="flex-1 border border-black/20 py-3 text-sm font-medium tracking-wider uppercase btn-main hover:bg-black/5 rounded flex items-center justify-center gap-2"> <i data-lucide="bookmark" style="width:16px;height:16px"></i> Save </button> <button onclick="resetOrder()" class="flex-1 bg-black text-white py-3 text-sm font-medium tracking-wider uppercase btn-main rounded">New Order</button>
+    </div>
+  </div>
+</div>
+<script>
+  // --- DATA ---
+  const clothesData = [
+    { id: 1, name: 'Oversized Wool Coat', color: '#2a2a2a', accent: '#555', price: 189, size: 'M',
+      pattern: (ctx,w,h)=>{ ctx.fillStyle='#2a2a2a'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#333'; ctx.lineWidth=1; for(let i=0;i<w;i+=8){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();} ctx.fillStyle='#444'; ctx.fillRect(w*0.3,h*0.15,w*0.4,h*0.12); ctx.fillRect(w*0.2,h*0.27,w*0.6,h*0.5); }},
+    { id: 2, name: 'Silk Drape Blouse', color: '#f5f0eb', accent: '#d4ccc3', price: 78, size: 'S',
+      pattern: (ctx,w,h)=>{ ctx.fillStyle='#f5f0eb'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#e8e0d8'; ctx.lineWidth=0.5; for(let i=0;i<40;i++){ctx.beginPath();ctx.arc(Math.random()*w,Math.random()*h,Math.random()*30+10,0,Math.PI*2);ctx.stroke();} ctx.fillStyle='#ebe3db'; ctx.fillRect(w*0.25,h*0.2,w*0.5,h*0.55); }},
+    { id: 3, name: 'Tailored Linen Trousers', color: '#e8e4de', accent: '#c8c2b8', price: 112, size: 'L',
+      pattern: (ctx,w,h)=>{ ctx.fillStyle='#e8e4de'; ctx.fillRect(0,0,w,h); ctx.fillStyle='#ddd8d0'; for(let y=0;y<h;y+=4){ctx.fillRect(0,y,w,2);} ctx.fillStyle='#d5d0c8'; ctx.fillRect(w*0.2,h*0.1,w*0.25,h*0.8); ctx.fillRect(w*0.55,h*0.1,w*0.25,h*0.8); }},
+    { id: 4, name: 'Merino Knit Sweater', color: '#1a1a1a', accent: '#333', price: 95, size: 'M',
+      pattern: (ctx,w,h)=>{ ctx.fillStyle='#1a1a1a'; ctx.fillRect(0,0,w,h); ctx.strokeStyle='#2a2a2a'; ctx.lineWidth=1; for(let y=0;y<h;y+=6){ctx.beginPath(); for(let x=0;x<w;x+=12){ctx.moveTo(x,y);ctx.quadraticCurveTo(x+6,y-3,x+12,y);} ctx.stroke();} ctx.fillStyle='#252525'; ctx.fillRect(w*0.2,h*0.15,w*0.6,h*0.55); }},
+  ];
+
+  const selectedProduct = getSelectedProductFromStorage();
+
+  let orderItems = selectedProduct ? [selectedProduct] : [];
+
+  // --- GENERATE CLOTH IMAGE ---
+  function generateClothImage(item, size=120) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size * 1.3;
+    const ctx = canvas.getContext('2d');
+    // rounded rect clip
+    const r = 8;
+    ctx.beginPath();
+    ctx.moveTo(r,0); ctx.lineTo(canvas.width-r,0); ctx.quadraticCurveTo(canvas.width,0,canvas.width,r);
+    ctx.lineTo(canvas.width,canvas.height-r); ctx.quadraticCurveTo(canvas.width,canvas.height,canvas.width-r,canvas.height);
+    ctx.lineTo(r,canvas.height); ctx.quadraticCurveTo(0,canvas.height,0,canvas.height-r);
+    ctx.lineTo(0,r); ctx.quadraticCurveTo(0,0,r,0);
+    ctx.clip();
+    item.pattern(ctx, canvas.width, canvas.height);
+    // subtle brand label
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.font = `bold ${size*0.08}px "DM Sans", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('MN', canvas.width/2, canvas.height - size*0.1);
+    return canvas.toDataURL();
+  }
+
+  // --- RENDER ORDER ITEMS ---
+  function renderOrderItems() {
+    const container = document.getElementById('order-items');
+    container.innerHTML = '';
+    orderItems.forEach((item, idx) => {
+        const imgSrc = item.image ? item.image : generateClothImage(item);
+        const div = document.createElement('div');
+      div.className = 'cloth-card flex gap-4 border border-black/10 rounded-lg p-3 anim-fade stagger-' + Math.min(idx+2, 5);
+      div.innerHTML = `
+<img src="${imgSrc}" alt="${item.name}" class="w-20 h-26 object-cover rounded" loading="lazy" onerror="this.src=''; this.style.background='#e5e7eb'; this.alt='Image unavailable';">      <div class="flex-1 min-w-0">
+        <div class="flex justify-between items-start">
+          <div>
+            <h3 class="text-sm font-medium truncate">${item.name}</h3>
+            <p class="text-xs text-black/40 mt-0.5">Size ${item.size}</p>
+          </div>
+          <button onclick="removeItem(${item.id})" class="item-remove w-7 h-7 rounded-full border border-black/15 flex items-center justify-center flex-shrink-0" aria-label="Remove ${item.name}">
+            <i data-lucide="x" style="width:14px;height:14px"></i>
+          </button>
+        </div>
+        <div class="flex items-center justify-between mt-3">
+          <div class="flex items-center border border-black/15 rounded overflow-hidden">
+            <button onclick="changeQty(${item.id},-1)" class="px-2 py-1 text-xs hover:bg-black/5 transition-colors" aria-label="Decrease quantity">−</button>
+            <span class="px-3 py-1 text-xs font-medium border-x border-black/15">${item.qty}</span>
+            <button onclick="changeQty(${item.id},1)" class="px-2 py-1 text-xs hover:bg-black/5 transition-colors" aria-label="Increase quantity">+</button>
+          </div>
+          <span class="text-sm font-bold">$${(item.price * item.qty).toFixed(2)}</span>
+        </div>
+      </div>
+    `;
+      container.appendChild(div);
+    });
+    updateTotals();
+    lucide.createIcons();
+  }
+
+  function removeItem(id) {
+    orderItems = orderItems.filter(i => i.id !== id);
+    if (orderItems.length === 0) {
+      showNotification('Your bag is empty — add items to continue', 'warning');
+    }
+    renderOrderItems();
+  }
+
+  function changeQty(id, delta) {
+    const item = orderItems.find(i => i.id === id);
+    if (item) {
+      item.qty = Math.max(1, Math.min(10, item.qty + delta));
+      renderOrderItems();
+    }
+  }
+
+  function updateTotals() {
+    const subtotal = orderItems.reduce((s, i) => s + i.price * i.qty, 0);
+    document.getElementById('subtotal').textContent = '$' + subtotal.toFixed(2);
+    const freeShipping = subtotal >= 100;
+    document.getElementById('delivery-cost').textContent = freeShipping ? 'FREE' : 'From $4.99';
+    document.getElementById('total').textContent = '$' + (freeShipping ? subtotal : subtotal + 4.99).toFixed(2);
+  }
+
+  // --- STEP NAVIGATION ---
+  function goToStep(step) {
+    if (step === 2 && orderItems.length === 0) {
+      showNotification('Add at least one item to your bag first', 'warning');
+      return;
+    }
+    document.getElementById('step-' + currentStep).className = 'step-hidden';
+    document.getElementById('step-' + step).className = 'step-active flex-1 flex flex-col px-6 pb-6';
+    if (step === 4) {
+      document.getElementById('step-' + step).className = 'step-active flex-1 flex flex-col items-center justify-center px-6 pb-6 text-center';
+    }
+    currentStep = step;
+
+    const labels = ['Order Review', 'Payment', 'Delivery & Policy', 'Confirmed'];
+    document.getElementById('step-label').textContent = labels[step - 1];
+    document.getElementById('step-count').textContent = `Step ${step} of 4`;
+    document.getElementById('progress-bar').style.width = (step * 25) + '%';
+
+    if (step === 2) updatePaymentView();
+    if (step === 3) {
+      const sub = orderItems.reduce((s,i) => s + i.price * i.qty, 0);
+      if (sub >= 100) showNotification('🎉 You qualify for FREE shipping!', 'success');
+      else showNotification(`📦 Spend $${(100 - sub).toFixed(2)} more for free shipping`, 'info');
+    }
+    if (step === 4) buildConfirmation();
+
+    lucide.createIcons();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // --- PAYMENT ---
+  function updatePaymentView() {
+    document.querySelectorAll('input[name="payment"]').forEach(r => {
+      r.addEventListener('change', () => {
+        document.getElementById('card-details').style.display = r.value === 'card' ? 'block' : 'none';
+      });
+    });
+  }
+
+  // --- CONFIRMATION ---
+  function buildConfirmation() {
+    const summary = document.getElementById('confirm-summary');
+    summary.innerHTML = '';
+    orderItems.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'flex justify-between';
+      div.innerHTML = `<span class="text-black/60">${item.name} ×${item.qty}</span><span>$${(item.price*item.qty).toFixed(2)}</span>`;
+      summary.appendChild(div);
+    });
+
+    const sub = orderItems.reduce((s,i) => s + i.price * i.qty, 0);
+    const delRadio = document.querySelector('input[name="delivery"]:checked');
+    const isExpress = delRadio && delRadio.value === 'express';
+    const delCost = sub >= 100 ? 0 : (isExpress ? 9.99 : 4.99);
+    const total = sub + delCost;
+
+    document.getElementById('confirm-total').textContent = '$' + total.toFixed(2);
+    document.getElementById('confirm-delivery').textContent = isExpress ? 'Express — 2-3 business days' : 'Standard — 5-7 business days';
+
+    const payMethod = document.querySelector('input[name="payment"]:checked');
+    const payLabels = { card: 'Credit / Debit Card', cod: 'Cash on Delivery', wallet: 'Digital Wallet', transfer: 'Bank Transfer' };
+    document.getElementById('confirm-payment').textContent = 'Paid via ' + (payLabels[payMethod?.value] || 'Credit Card');
+
+    document.getElementById('order-number').textContent = 'Order #MN-' + new Date().getFullYear() + '-' + String(Math.floor(Math.random()*99999)).padStart(5,'0');
+
+    showNotification('✅ Your order has been placed successfully!', 'success');
+  }
+
+  function saveOrder() {
+    showNotification('📌 Order saved — you can access it anytime', 'success');
+  }
+
+  function resetOrder() {
+    orderItems = clothesData.map(c => ({...c, qty: 1}));
+    renderOrderItems();
+    goToStep(1);
+    showNotification('🛍️ Fresh bag ready — happy shopping!', 'info');
+  }
+
+  // --- NOTIFICATIONS ---
+  let notifTimeout;
+  function showNotification(message, type='info') {
+    clearTimeout(notifTimeout);
+    const area = document.getElementById('notification-area');
+    const colors = { success: 'bg-black text-white', warning: 'bg-white text-black border border-black', info: 'bg-black/90 text-white' };
+    const icons = { success: 'check-circle', warning: 'alert-triangle', info: 'info' };
+    area.innerHTML = `
+    <div class="notification-bar ${colors[type]} rounded-lg px-4 py-3 mb-3 flex items-center gap-3 text-sm">
+      <i data-lucide="${icons[type]}" style="width:18px;height:18px;flex-shrink:0"></i>
+      <span class="flex-1">${message}</span>
+      <button onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100" aria-label="Dismiss notification"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+    </div>
+  `;
+    lucide.createIcons();
+    notifTimeout = setTimeout(() => { area.innerHTML = ''; }, 5000);
+  }
+
+  // --- ELEMENT SDK ---
+  const defaultConfig = {
+    background_color: '#ffffff',
+    surface_color: '#f8f8f8',
+    text_color: '#000000',
+    primary_action_color: '#000000',
+    secondary_action_color: '#666666',
+    font_family: 'DM Sans',
+    font_size: 14,
+    brand_name: 'MAISON NOIR',
+    delivery_price_text: 'Free over $100',
+    exchange_policy_text: '14-day returns on all unworn items'
+  };
+
+  function applyConfig(config) {
+    const bg = config.background_color || defaultConfig.background_color;
+    const surface = config.surface_color || defaultConfig.surface_color;
+    const text = config.text_color || defaultConfig.text_color;
+    const primary = config.primary_action_color || defaultConfig.primary_action_color;
+    const secondary = config.secondary_action_color || defaultConfig.secondary_action_color;
+    const font = config.font_family || defaultConfig.font_family;
+    const fontSize = config.font_size || defaultConfig.font_size;
+
+    document.body.style.backgroundColor = bg;
+    document.body.style.color = text;
+    document.body.style.fontFamily = `${font}, 'DM Sans', sans-serif`;
+    document.body.style.fontSize = fontSize + 'px';
+
+    // Brand name
+    const brandEl = document.getElementById('brand-name');
+    if (brandEl) brandEl.textContent = config.brand_name || defaultConfig.brand_name;
+
+    // Delivery note
+    const freeNote = document.getElementById('delivery-free-note');
+    if (freeNote) freeNote.textContent = 'Orders — ' + (config.delivery_price_text || defaultConfig.delivery_price_text);
+
+    // Primary action buttons
+    document.querySelectorAll('.bg-black.text-white').forEach(btn => {
+      btn.style.backgroundColor = primary;
+    });
+
+    // Headers with bg-black
+    document.querySelectorAll('.bg-black.text-white.px-4').forEach(el => {
+      el.style.backgroundColor = primary;
+    });
+
+    // Headings
+    document.querySelectorAll('h2').forEach(h => {
+      h.style.color = text;
+      h.style.fontFamily = `'Playfair Display', ${font}, serif`;
+      h.style.fontSize = (fontSize * 1.8) + 'px';
+    });
+
+    document.querySelectorAll('h3').forEach(h => { h.style.fontSize = fontSize + 'px'; });
+    document.querySelectorAll('.text-xs').forEach(el => { el.style.fontSize = (fontSize * 0.8) + 'px'; });
+    document.querySelectorAll('.text-sm').forEach(el => { el.style.fontSize = (fontSize * 0.9) + 'px'; });
+  }
+
+  window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (config) => { applyConfig(config); },
+    mapToCapabilities: (config) => ({
+      recolorables: [
+        { get: () => config.background_color || defaultConfig.background_color, set: (v) => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); } },
+        { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+        { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+        { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: (v) => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); } },
+        { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: (v) => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); } },
+      ],
+      borderables: [],
+      fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+      fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } },
+    }),
+    mapToEditPanelValues: (config) => new Map([
+      ['brand_name', config.brand_name || defaultConfig.brand_name],
+      ['delivery_price_text', config.delivery_price_text || defaultConfig.delivery_price_text],
+      ['exchange_policy_text', config.exchange_policy_text || defaultConfig.exchange_policy_text],
+    ])
+  });
+  function getSelectedProductFromStorage() {
+      const raw = localStorage.getItem('selectedProduct');
+      if (!raw) return null;
+
+      try {
+          const product = JSON.parse(raw);
+          return {
+              id: Date.now(),
+              name: product.name || 'Selected Product',
+              image: product.image || '',
+              price: Number(product.price) || 0,
+              category: product.category || '',
+              size: 'M',
+              qty: 1
+          };
+      } catch (e) {
+          return null;
+      }
+  }
+  // --- INIT ---
+  renderOrderItems();
+  lucide.createIcons();
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eee601ad43a5dab',t:'MTc3NjYyNzU2OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
