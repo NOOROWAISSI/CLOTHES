@@ -133,7 +133,9 @@
     </div><!-- Navbar -->
     <nav class="fixed top-0 left-0 w-full z-30 bg-white/90 backdrop-blur-md border-b border-black/5 anim-slide-down">
         <div class="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between h-16">
-            <div class="flex items-center gap-8"><a href="#" class="font-display text-2xl font-bold tracking-wider" id="logoText">NOIR</a>
+            <div class="flex items-center gap-8"><a href="#" class="font-display text-2xl font-bold tracking-wider" id="logoText">
+                    <img src="pic/logo2.png" alt="logo" style="height:65px; object-fit:contain;">
+                </a>
                 <div class="hidden md:flex items-center gap-6 text-xs tracking-widest uppercase"><a href="#" class="hover:opacity-50 transition">New In</a> <a href="#" class="hover:opacity-50 transition">Women</a> <a href="#" class="hover:opacity-50 transition">Men</a> <a href="#" class="hover:opacity-50 transition">Sale</a>
                 </div>
             </div>
@@ -148,7 +150,6 @@
             <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl font-bold leading-none mb-6 anim-fade-up delay-2" id="heroHeading">NEW<br>
                 COLLECTION</h1>
             <p class="text-sm tracking-wider max-w-md mx-auto mb-8 opacity-60 anim-fade-up delay-3">Redefining minimalism through precision tailoring and contemporary silhouettes.</p><a href="#products" class="inline-flex items-center gap-3 bg-white text-black px-8 py-4 text-xs tracking-widest uppercase hover:bg-white/90 transition anim-fade-up delay-4"> Shop Now <i data-lucide="arrow-right" class="w-4 h-4"></i> </a> <!-- Decorative -->
-
         </div>
     </section><!-- Marquee -->
     <div class="border-y border-black/10 py-3 overflow-hidden bg-black/[0.02]">
@@ -177,7 +178,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
                 <div>
-                    <h3 class="font-display text-xl font-bold mb-4" id="footerLogo">NOIR</h3>
+                    <h3 class="font-display text-xl font-bold mb-4" id="footerLogo">
+                        <img src="pic/logo2.png" alt="logo" style="height:40px;">
+                    </h3>
                     <p class="text-xs opacity-50 leading-relaxed">Contemporary fashion for the modern individual. Crafted with intention.</p>
                 </div>
                 <div>
