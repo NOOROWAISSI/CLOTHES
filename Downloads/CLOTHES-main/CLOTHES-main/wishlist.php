@@ -1,4 +1,5 @@
 <?php
+global $conn;
 include "db.php";
 
 if (!isset($_SESSION['user_id'])) {
@@ -25,7 +26,7 @@ SELECT
     p.price,
     COALESCE(pt.product_name, 'Unnamed Product') AS product_name,
     COALESCE(ct.category_name, 'Category') AS category_name,
-    COALESCE(pi.image_url, 'pic/logo1.jpeg') AS image_url,
+    COALESCE(pi.image_url, 'pic/lolo.png') AS image_url,
     p.created_at
 FROM favorites f
 JOIN products p ON f.product_id = p.product_id
@@ -67,7 +68,7 @@ SELECT
     p.product_id,
     p.price,
     COALESCE(pt.product_name, 'Product') AS product_name,
-    COALESCE(pi.image_url, 'pic/logo1.jpeg') AS image_url
+    COALESCE(pi.image_url, 'pic/lolo1.png') AS image_url
 FROM products p
 LEFT JOIN product_translations pt 
     ON p.product_id = pt.product_id AND pt.language_code = '$lang'
@@ -256,7 +257,7 @@ LIMIT 8
     <header class="sticky top-0 z-50 bg-black border-b text-white" style="border-color:#333">
         <div class="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
             <a href="index.php" class="flex items-center gap-3">
-                <img src="pic/logo1.jpeg" alt="logo" class="w-20 h-20 object-contain">
+                <img src="pic/lolo1.png" alt="logo" class="w-50 h-20 object-contain">
             </a>
 
             <nav class="hidden md:flex items-center gap-8">

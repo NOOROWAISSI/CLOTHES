@@ -170,6 +170,22 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['delete_collection']))
     header("Location: admin.php#collections");
     exit();
 }
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_collection_new'])) {
+    $collection_id = intval($_POST['collection_id']);
+    $is_new = isset($_POST['is_new']) ? 1 : 0;
+
+    $stmt = $conn->prepare("
+        UPDATE collections
+        SET is_new=?
+        WHERE collection_id=?
+    ");
+    $stmt->bind_param("ii", $is_new, $collection_id);
+    $stmt->execute();
+    $stmt->close();
+
+    header("Location: admin.php#collections");
+    exit();
+}
 
 /* ================= STATS ================= */
 
@@ -450,6 +466,7 @@ $collectionsResult = $conn->query("
     SELECT
         c.collection_id,
         c.collection_key,
+        COALESCE(c.is_new,0) AS is_new,
         COALESCE(ct.collection_name, c.collection_key) AS collection_name,
         COALESCE(ct.description, '') AS description,
         COUNT(p.product_id) AS items_count
@@ -1043,7 +1060,22 @@ $activityResult = $conn->query("
                             <div class="card-hover rounded-lg p-6">
                                 <div class="flex justify-between items-start mb-4">
                                     <div>
-                                        <h3 class="font-display text-xl font-bold"><?= h($col['collection_name']) ?></h3>
+                                        <div>
+                                            <h3 class="font-display text-xl font-bold">
+                                                <?= h($col['collection_name']) ?>
+                                            </h3>
+
+                                            <?php if ((int)$col['is_new'] === 1): ?>
+                                                <span class="inline-block mt-2 bg-black text-white text-[10px] px-2 py-1 rounded-full font-bold">
+            NEW
+        </span>
+                                            <?php endif; ?>
+
+                                            <p class="text-zinc-500 text-xs mt-1">
+                                                <?= h($col['items_count']) ?> item<?= $col['items_count'] != 1 ? 's' : '' ?>
+                                            </p>
+                                        </div>
+
                                         <p class="text-zinc-500 text-xs mt-1"><?= h($col['items_count']) ?> item<?= $col['items_count'] != 1 ? 's' : '' ?></p>
                                     </div>
 
@@ -1057,6 +1089,18 @@ $activityResult = $conn->query("
                                 <div class="text-zinc-600 text-xs italic">
                                     <?= !empty($col['description']) ? h($col['description']) : 'No description yet' ?>
                                 </div>
+                                <form method="POST" class="mt-4 border border-zinc-200 rounded p-2 bg-zinc-50">
+                                    <input type="hidden" name="collection_id" value="<?= h($col['collection_id']) ?>">
+
+                                    <label class="flex items-center gap-2 text-xs">
+                                        <input type="checkbox" name="is_new" <?= (int)$col['is_new'] === 1 ? 'checked' : '' ?>>
+                                        Show this collection as NEW on Home
+                                    </label>
+
+                                    <button name="update_collection_new" class="btn-primary px-3 py-1 rounded text-xs w-full mt-2">
+                                        Save NEW Status
+                                    </button>
+                                </form>
                             </div>
                         <?php endwhile; ?>
                     <?php else: ?>

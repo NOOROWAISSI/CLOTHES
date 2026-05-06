@@ -15,7 +15,35 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 
 $isLoggedIn = isset($_SESSION['user_id']);
-$currentUserName = $_SESSION['full_name'] ?? "";
+$currentUserName = "";
+
+if (isset($_SESSION['user_name'])) {
+    $currentUserName = $_SESSION['user_name'];
+}
+elseif (isset($_SESSION['full_name'])) {
+    $currentUserName = $_SESSION['full_name'];
+}
+
+
+$wishlistIds = [];
+$wishlistCount = 0;
+
+if ($isLoggedIn) {
+    $uid = (int)$_SESSION['user_id'];
+
+    $wq = $conn->prepare("SELECT product_id FROM favorites WHERE user_id=?");
+    $wq->bind_param("i", $uid);
+    $wq->execute();
+    $wr = $wq->get_result();
+
+    while ($row = $wr->fetch_assoc()) {
+        $wishlistIds[] = (int)$row['product_id'];
+    }
+
+    $wishlistCount = count($wishlistIds);
+}
+
+$lang = $_GET['lang'] ?? 'en';
 
 $lang = $_GET['lang'] ?? 'en';
 $lang = in_array($lang, ['en', 'ar', 'he']) ? $lang : 'en';
@@ -237,13 +265,21 @@ SELECT
     p.price,
     pt.product_name,
     pt.description,
-    pi.image_url
-FROM products p
+    pi.image_url,
+    MIN(pv.variant_id) AS variant_id
+FROM collections c
+JOIN products p 
+    ON c.collection_id = p.collection_id
 JOIN product_translations pt 
     ON p.product_id = pt.product_id
 LEFT JOIN product_images pi 
     ON p.product_id = pi.product_id AND pi.is_main = 1
-WHERE pt.language_code = ?
+LEFT JOIN product_variants pv
+    ON p.product_id = pv.product_id AND pv.quantity > 0
+WHERE 
+    c.is_new = 1
+    AND pt.language_code = ?
+GROUP BY p.product_id
 ORDER BY p.created_at DESC
 LIMIT 4
 ";
@@ -739,8 +775,10 @@ function langUrl($newLang) {
 
                 <button onclick="goPage('wishlist.php?lang=<?= htmlspecialchars($lang) ?>', true)" id="wishlist-btn" class="relative">
                     <i data-lucide="heart" style="width:18px;height:18px;"></i>
-                    <span id="wishlist-count" class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black hidden">0</span>
-                </button>
+                    <span id="wishlist-count"
+                          class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black <?= $wishlistCount > 0 ? '' : 'hidden' ?>">
+    <?= $wishlistCount ?>
+</span>                </button>
 
                 <button onclick="goPage('cart.php?lang=<?= htmlspecialchars($lang) ?>', true)" id="cart-btn" class="relative">
                     <i data-lucide="shopping-bag" style="width:18px;height:18px;"></i>
@@ -853,8 +891,14 @@ function langUrl($newLang) {
                                 $<?= htmlspecialchars($product['price']) ?>
                             </p>
 
-                            <button onclick="toggleWishlist(<?= (int)$product['product_id'] ?>, this)"
-                                    class="mt-3 text-xl wishlist-btn">♡</button>
+                            <?php $isFav = in_array((int)$product['product_id'], $wishlistIds); ?>
+
+                            <button type="button"
+                                    onclick="toggleWishlist(<?= (int)$product['product_id'] ?>, this)"
+                                    class="mt-3 text-xl wishlist-btn"
+                                    style="<?= $isFav ? 'color:#ef4444;' : '' ?>">
+                                <?= $isFav ? '♥' : '♡' ?>
+                            </button>
                         </div>
                     <?php endwhile; ?>
                 <?php else: ?>
@@ -1087,9 +1131,23 @@ function langUrl($newLang) {
             return;
         }
 
-        cart.push(id);
-        document.getElementById('cart-count').textContent = cart.length;
-        showToast(T.added_cart);
+        fetch('add_to_cart.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'product_id=' + encodeURIComponent(id)
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'login') {
+                    window.location.href = withLang('signin.php');
+                } else if (data.status === 'soldout') {
+                    showToast('Sold out');
+                } else if (data.status === 'added') {
+                    let count = document.getElementById('cart-count');
+                    count.textContent = parseInt(count.textContent || '0') + 1;
+                    showToast(T.added_cart);
+                }
+            });
     };
 
     window.toggleWishlist = function(id, btn) {
@@ -1098,21 +1156,42 @@ function langUrl($newLang) {
             return;
         }
 
-        if (wishlist.includes(id)) {
-            wishlist = wishlist.filter(item => item !== id);
-            btn.textContent = '♡';
-            btn.style.color = '';
-        } else {
-            wishlist.push(id);
-            btn.textContent = '♥';
-            btn.style.color = '#ef4444';
-        }
+        fetch('toggle_wishlist.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'product_id=' + encodeURIComponent(id)
+        })
+            .then(res => res.text())
+            .then(text => {
+                console.log(text);
 
-        const countEl = document.getElementById('wishlist-count');
-        countEl.textContent = wishlist.length;
-        countEl.classList.toggle('hidden', wishlist.length === 0);
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    alert('في خطأ داخل toggle_wishlist.php: ' + text);
+                    return;
+                }
+
+                if (data.status === 'added') {
+                    btn.textContent = '♥';
+                    btn.style.color = '#ef4444';
+                    showToast('Added to wishlist ✓');
+                } else if (data.status === 'removed') {
+                    btn.textContent = '♡';
+                    btn.style.color = '';
+                    showToast('Removed from wishlist');
+                } else if (data.status === 'login') {
+                    window.location.href = withLang('signin.php');
+                } else {
+                    alert(data.message || 'Wishlist error');
+                }
+            })
+            .catch(err => {
+                alert('ملف toggle_wishlist.php مش موجود أو فيه مشكلة');
+                console.error(err);
+            });
     };
-
     function showToast(msg) {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-white text-black px-6 py-3 rounded-full text-sm shadow-xl z-[100]';

@@ -142,7 +142,7 @@ $orders_result = $stmt->get_result();
     <header class="sticky top-0 z-40 bg-black border-b border-white/10">
         <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <a href="index.php" class="flex items-center gap-3">
-                <img src="pic/logo1.jpeg" alt="Demoiselle" class="w-20 h-20 object-contain">
+                <img src="pic/lolo1.png" alt="Demoiselle" class="w-50 h-20 object-contain">
             </a>
 
             <div class="flex items-center gap-3">

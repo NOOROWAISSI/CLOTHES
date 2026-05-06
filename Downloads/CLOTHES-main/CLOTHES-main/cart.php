@@ -1,911 +1,395 @@
+<?php
+global $conn;
+include_once "db.php";
+
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}
+
+$lang = $_GET['lang'] ?? 'en';
+$lang = in_array($lang, ['en','ar','he']) ? $lang : 'en';
+
+$text = [
+        'en' => [
+                'home'=>'Home','collection'=>'Collection','categories'=>'Categories','our_story'=>'Our Story','contact'=>'Contact',
+                'languages'=>'Languages','pages'=>'Pages','shop'=>'Shop','company'=>'Company','support'=>'Support',
+                'new_arrivals'=>'New Arrivals','instagram'=>'Instagram','contact_us'=>'Contact Us',
+                'new_collection'=>'New Collection','search'=>'Search','cart'=>'Cart','wishlist'=>'Wishlist','order'=>'Order',
+                'profile'=>'Profile','about'=>'About','sign_in'=>'Sign In','sign_up'=>'Sign Up','logout'=>'Logout',
+                'user_signin'=>'User / Sign In','footer_desc'=>'Timeless elegance. Conscious fashion.',
+                'rights'=>'© 2025 demoiselle. All rights reserved.','made'=>'Made with love in Palestine'
+        ],
+        'ar' => [
+                'home'=>'الرئيسية','collection'=>'المجموعة','categories'=>'الأقسام','our_story'=>'قصتنا','contact'=>'تواصل معنا',
+                'languages'=>'اللغات','pages'=>'الصفحات','shop'=>'تسوق','company'=>'الشركة','support'=>'الدعم',
+                'new_arrivals'=>'وصل حديثًا','instagram'=>'إنستغرام','contact_us'=>'تواصل معنا',
+                'new_collection'=>'المجموعة الجديدة','search'=>'البحث','cart'=>'السلة','wishlist'=>'المفضلة','order'=>'الطلب',
+                'profile'=>'الملف الشخصي','about'=>'من نحن','sign_in'=>'تسجيل الدخول','sign_up'=>'إنشاء حساب','logout'=>'تسجيل الخروج',
+                'user_signin'=>'المستخدم / تسجيل الدخول','footer_desc'=>'أناقة خالدة. أزياء واعية.',
+                'rights'=>'© 2025 ديموازيل. جميع الحقوق محفوظة.','made'=>'صنع بحب في فلسطين'
+        ],
+        'he' => [
+                'home'=>'בית','collection'=>'קולקציה','categories'=>'קטגוריות','our_story'=>'הסיפור שלנו','contact'=>'צור קשר',
+                'languages'=>'שפות','pages'=>'עמודים','shop'=>'חנות','company'=>'חברה','support'=>'תמיכה',
+                'new_arrivals'=>'חדשים','instagram'=>'אינסטגרם','contact_us'=>'צור קשר',
+                'new_collection'=>'קולקציה חדשה','search'=>'חיפוש','cart'=>'עגלה','wishlist'=>'מועדפים','order'=>'הזמנה',
+                'profile'=>'פרופיל','about'=>'אודות','sign_in'=>'התחברות','sign_up'=>'הרשמה','logout'=>'התנתקות',
+                'user_signin'=>'משתמש / התחברות','footer_desc'=>'אלגנטיות על־זמנית. אופנה מודעת.',
+                'rights'=>'© 2025 demoiselle. כל הזכויות שמורות.','made'=>'נוצר באהבה בפלסטין'
+        ]
+];
+
+$t = $text[$lang];
+
+$isLoggedIn = isset($_SESSION['user_id']);
+if (!$isLoggedIn) {
+    header("Location: signin.php?lang=" . urlencode($lang));
+    exit;
+}
+
+$user_id = (int)$_SESSION['user_id'];
+$currentUserName = $_SESSION['user_name'] ?? ($_SESSION['full_name'] ?? '');
+
+function langUrl($newLang) {
+    $params = $_GET;
+    $params['lang'] = $newLang;
+    return basename($_SERVER['PHP_SELF']) . '?' . http_build_query($params);
+}
+
+/* Wishlist count */
+$wishlistCount = 0;
+$wq = $conn->prepare("SELECT COUNT(*) AS cnt FROM favorites WHERE user_id=?");
+$wq->bind_param("i", $user_id);
+$wq->execute();
+$wishlistCount = (int)$wq->get_result()->fetch_assoc()['cnt'];
+
+/* Cart count */
+$cartTopCount = 0;
+$cq = $conn->prepare("
+    SELECT COALESCE(SUM(quantity),0) AS cnt
+    FROM cart
+    WHERE user_id=?
+");
+$cq->bind_param("i", $user_id);
+$cq->execute();
+$cartTopCount = (int)$cq->get_result()->fetch_assoc()['cnt'];
+
+/* Categories for dropdown */
+$categories_result = null;
+$catStmt = $conn->prepare("
+    SELECT c.category_key, ct.category_name
+    FROM categories c
+    JOIN category_translations ct ON c.category_id = ct.category_id
+    WHERE ct.language_code = ?
+    ORDER BY c.category_id
+");
+$catStmt->bind_param("s", $lang);
+$catStmt->execute();
+$categories_result = $catStmt->get_result();
+
+/* UPDATE QTY */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['update_qty'])) {
+    $cart_id = (int)$_POST['cart_id'];
+    $qty = max(1, (int)$_POST['quantity']);
+
+    $stmt = $conn->prepare("UPDATE cart SET quantity=? WHERE cart_id=? AND user_id=?");
+    $stmt->bind_param("iii", $qty, $cart_id, $user_id);
+    $stmt->execute();
+
+    header("Location: cart.php?lang=" . urlencode($lang));
+    exit;
+}
+
+/* DELETE ITEM */
+if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['delete_item'])) {
+    $cart_id = (int)$_POST['cart_id'];
+
+    $stmt = $conn->prepare("DELETE FROM cart WHERE cart_id=? AND user_id=?");
+    $stmt->bind_param("ii", $cart_id, $user_id);
+    $stmt->execute();
+
+    header("Location: cart.php?lang=" . urlencode($lang));
+    exit;
+}
+
+/* CART DATA */
+$sql = "
+SELECT
+    c.cart_id,
+    c.quantity AS cart_qty,
+    pv.variant_id,
+    pv.color,
+    pv.size,
+    pv.variant_image_url,
+    p.product_id,
+    p.price,
+    COALESCE(pt.product_name, CONCAT('Product #', p.product_id)) AS product_name,
+    COALESCE(pi.image_url, '') AS main_image
+FROM cart c
+JOIN product_variants pv ON c.variant_id = pv.variant_id
+JOIN products p ON pv.product_id = p.product_id
+LEFT JOIN product_translations pt
+    ON p.product_id = pt.product_id AND pt.language_code = ?
+LEFT JOIN product_images pi
+    ON p.product_id = pi.product_id AND pi.is_main = 1
+WHERE c.user_id = ?
+ORDER BY c.cart_id DESC
+";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("si", $lang, $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$cartItems = [];
+$subtotal = 0;
+$totalQty = 0;
+
+while ($row = $result->fetch_assoc()) {
+    $row['image'] = $row['variant_image_url'] ?: ($row['main_image'] ?: 'pic/default.jpg');
+    $row['line_total'] = (float)$row['price'] * (int)$row['cart_qty'];
+    $subtotal += $row['line_total'];
+    $totalQty += (int)$row['cart_qty'];
+    $cartItems[] = $row;
+}
+
+$shipping = $subtotal >= 250 || $subtotal == 0 ? 0 : 15;
+$total = $subtotal + $shipping;
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= h($lang) ?>" class="h-full" <?= ($lang === 'ar' || $lang === 'he') ? 'dir="rtl"' : 'dir="ltr"' ?>>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Shopping Bag | Demoiselle</title>
 
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --black: #000;
-            --white: #fff;
-            --soft-white: #fafafa;
-            --light-gray: #efefef;
-            --mid-gray: #b8b8b8;
-            --text-gray: #777;
-            --dark-gray: #1a1a1a;
-            --transition: 0.3s ease;
-            --shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-        }
-
-        body {
-            font-family: "Helvetica Neue", Arial, sans-serif;
-            background: var(--white);
-            color: var(--black);
-            line-height: 1.5;
-        }
-
-        a {
-            text-decoration: none;
-            color: inherit;
-        }
-
-        button,
-        input {
-            font-family: inherit;
-        }
-
-        img {
-            width: 100%;
-            display: block;
-        }
-
-        /* HEADER */
-        header {
-            width: 100%;
-            background: var(--black);
-            color: var(--white);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-        }
-
-        .top-bar {
-            padding: 12px 5%;
-            font-size: 12px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            text-align: center;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            color: rgba(255,255,255,0.75);
-        }
-
-        .navbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 5%;
-            gap: 20px;
-        }
-
-        .icons-only-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .logo {
-            font-size: 28px;
-            font-weight: 500;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-            color: var(--white);
-        }
-
-        .logo-link {
-            text-decoration: none;
-            color: var(--white);
-        }
-
-        .icons-nav {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-left: auto;
-        }
-
-        .icon-link {
-            width: 42px;
-            height: 42px;
-            border: 1px solid rgba(255,255,255,0.18);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--white);
-            transition: var(--transition);
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .icon-link:hover {
-            background: var(--white);
-            color: var(--black);
-            transform: translateY(-2px);
-        }
-
-        .icon-link svg {
-            width: 19px;
-            height: 19px;
-        }
-
-        .bag-icon-wrap {
-            position: relative;
-        }
-
-        .bag-count {
-            position: absolute;
-            top: -4px;
-            right: -2px;
-            min-width: 18px;
-            height: 18px;
-            padding: 0 4px;
-            border-radius: 999px;
-            background: var(--white);
-            color: var(--black);
-            font-size: 10px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* HERO */
-        .page-hero {
-            padding: 60px 5% 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .page-hero h1 {
-            font-size: clamp(32px, 5vw, 64px);
-            font-weight: 500;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            line-height: 1;
-        }
-
-        .page-hero p {
-            max-width: 500px;
-            color: var(--text-gray);
-            font-size: 15px;
-        }
-
-        /* MAIN LAYOUT */
-        .cart-wrapper {
-            display: grid;
-            grid-template-columns: 1.6fr 0.9fr;
-            gap: 48px;
-            padding: 20px 5% 80px;
-            align-items: start;
-        }
-
-        .cart-count {
-            font-size: 13px;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            color: var(--text-gray);
-            margin-bottom: 18px;
-        }
-
-        .cart-actions-top {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-
-        .select-all-wrap {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--dark-gray);
-        }
-
-        .cart-list {
-            display: flex;
-            flex-direction: column;
-            gap: 22px;
-        }
-
-        .cart-item {
-            display: grid;
-            grid-template-columns: auto 140px 1fr auto;
-            gap: 22px;
-            padding: 20px;
-            border: 1px solid #efefef;
-            border-radius: 18px;
-            background: var(--white);
-            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-            animation: fadeUp 0.5s ease;
-        }
-
-        .cart-item:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow);
-        }
-
-        .cart-item.selected {
-            border-color: var(--black);
-            box-shadow: 0 12px 28px rgba(0,0,0,0.09);
-        }
-
-        .item-check-wrap {
-            display: flex;
-            align-items: start;
-            justify-content: center;
-            padding-top: 6px;
-        }
-
-        .item-check {
-            width: 20px;
-            height: 20px;
-            accent-color: black;
-            cursor: pointer;
-        }
-
-        .cart-item-image {
-            width: 100%;
-            height: 180px;
-            border-radius: 14px;
-            overflow: hidden;
-            background: #f6f6f6;
-        }
-
-        .cart-item-image img {
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .cart-item-info {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 14px;
-        }
-
-        .item-top {
-            display: flex;
-            justify-content: space-between;
-            gap: 20px;
-        }
-
-        .item-title {
-            font-size: 20px;
-            font-weight: 500;
-            letter-spacing: 0.6px;
-        }
-
-        .remove-btn {
-            border: none;
-            background: transparent;
-            font-size: 20px;
-            cursor: pointer;
-            color: #999;
-            transition: var(--transition);
-        }
-
-        .remove-btn:hover {
-            color: var(--black);
-            transform: scale(1.08);
-        }
-
-        .item-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            color: var(--text-gray);
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-        }
-
-        .item-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .qty-box {
-            display: inline-flex;
-            align-items: center;
-            border: 1px solid #ddd;
-            border-radius: 999px;
-            overflow: hidden;
-            background: var(--white);
-        }
-
-        .qty-btn {
-            width: 42px;
-            height: 42px;
-            border: none;
-            background: transparent;
-            font-size: 18px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .qty-btn:hover {
-            background: #f5f5f5;
-        }
-
-        .qty-value {
-            min-width: 44px;
-            text-align: center;
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        .item-prices {
-            text-align: right;
-        }
-
-        .unit-price {
-            color: var(--text-gray);
-            font-size: 13px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .line-total {
-            font-size: 22px;
-            font-weight: 600;
-            margin-top: 4px;
-        }
-
-        /* SUMMARY */
-        .summary-section {
-            position: sticky;
-            top: 110px;
-        }
-
-        .summary-card {
-            border: 1px solid #ececec;
-            border-radius: 20px;
-            padding: 28px;
-            background: var(--soft-white);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
-            animation: fadeUp 0.5s ease;
-        }
-
-        .summary-title {
-            font-size: 24px;
-            font-weight: 500;
-            margin-bottom: 24px;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
-        .promo-box {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-
-        .promo-input {
-            flex: 1;
-            height: 48px;
-            border: 1px solid #dcdcdc;
-            border-radius: 999px;
-            background: var(--white);
-            padding: 0 16px;
-            font-size: 14px;
-            outline: none;
-            transition: var(--transition);
-        }
-
-        .promo-input:focus {
-            border-color: var(--black);
-        }
-
-        .promo-btn {
-            height: 48px;
-            padding: 0 22px;
-            border: none;
-            border-radius: 999px;
-            background: var(--black);
-            color: var(--white);
-            cursor: pointer;
-            font-size: 13px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: var(--transition);
-        }
-
-        .promo-btn:hover {
-            opacity: 0.88;
-        }
-
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            padding: 12px 0;
-            color: var(--dark-gray);
-            font-size: 15px;
-            border-bottom: 1px solid #e8e8e8;
-        }
-
-        .summary-row.total {
-            border-bottom: none;
-            padding-top: 18px;
-            margin-top: 4px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .delivery-note {
-            margin-top: 14px;
-            font-size: 13px;
-            color: var(--text-gray);
-            letter-spacing: 0.5px;
-        }
-
-        .selected-note {
-            margin-top: 10px;
-            font-size: 12px;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .checkout-btn,
-        .continue-btn {
-            width: 100%;
-            height: 54px;
-            border-radius: 999px;
-            font-size: 14px;
-            letter-spacing: 1.4px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: var(--transition);
-            margin-top: 16px;
-        }
-
-        .checkout-btn {
-            background: var(--black);
-            color: var(--white);
-            border: none;
-            font-weight: 600;
-        }
-
-        .checkout-btn:hover {
-            transform: translateY(-2px);
-            opacity: 0.94;
-        }
-
-        .continue-btn {
-            background: transparent;
-            color: var(--black);
-            border: 1px solid var(--black);
-        }
-
-        .continue-btn:hover {
-            background: var(--black);
-            color: var(--white);
-        }
-
-        .secure-note {
-            margin-top: 18px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-gray);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .trust-badges {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-top: 22px;
-        }
-
-        .trust-badge {
-            border: 1px solid #e7e7e7;
-            border-radius: 14px;
-            background: var(--white);
-            padding: 14px 10px;
-            text-align: center;
-            font-size: 12px;
-            color: var(--text-gray);
-            line-height: 1.4;
-        }
-
-        .trust-badge strong {
-            display: block;
-            color: var(--black);
-            font-size: 12px;
-            margin-bottom: 3px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* EMPTY CART */
-        .empty-cart {
-            display: none;
-            border: 1px solid #ededed;
-            border-radius: 24px;
-            padding: 50px 24px;
-            text-align: center;
-            background: linear-gradient(to bottom, #fff, #fafafa);
-            animation: fadeUp 0.4s ease;
-        }
-
-        .empty-cart.show {
-            display: block;
-        }
-
-        .empty-cart h2 {
-            font-size: 34px;
-            margin-bottom: 10px;
-            font-weight: 500;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .empty-cart p {
-            max-width: 520px;
-            margin: 0 auto 28px;
-            color: var(--text-gray);
-            font-size: 15px;
-        }
-
-        .empty-cart .continue-btn {
-            width: auto;
-            min-width: 220px;
-            padding: 0 26px;
-            display: inline-block;
-        }
-
-        /* RECOMMENDATIONS */
-        .recommendations {
-            padding: 10px 5% 90px;
-            overflow: hidden;
-        }
-
-        .section-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: end;
-            gap: 20px;
-            margin-bottom: 28px;
-            flex-wrap: wrap;
-        }
-
-        .section-head h2 {
-            font-size: clamp(26px, 4vw, 42px);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-        }
-
-        .section-head p {
-            color: var(--text-gray);
-            max-width: 500px;
-        }
-
-        .recommend-top-actions {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .slider-arrow {
-            width: 46px;
-            height: 46px;
-            border: 1px solid #ddd;
-            background: var(--white);
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 18px;
-            transition: var(--transition);
-        }
-
-        .slider-arrow:hover {
-            background: var(--black);
-            color: var(--white);
-            border-color: var(--black);
-        }
-
-        .recommend-slider-wrap {
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .recommend-track {
-            display: flex;
-            gap: 22px;
-            transition: transform 0.45s ease;
-            will-change: transform;
-        }
-
-        .recommend-card {
-            min-width: calc(25% - 16.5px);
-            border-radius: 20px;
-            overflow: hidden;
-            background: var(--white);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .recommend-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow);
-        }
-
-        .recommend-image {
-            height: 360px;
-            overflow: hidden;
-            background: #f4f4f4;
-        }
-
-        .recommend-image img {
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-        }
-
-        .recommend-card:hover .recommend-image img {
-            transform: scale(1.04);
-        }
-
-        .recommend-info {
-            padding: 16px 6px 4px;
-        }
-
-        .recommend-name {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-
-        .recommend-price {
-            font-size: 14px;
-            color: var(--text-gray);
-            margin-bottom: 12px;
-        }
-
-        .recommend-btn {
-            width: 100%;
-            height: 46px;
-            border: 1px solid var(--black);
-            border-radius: 999px;
-            background: transparent;
-            color: var(--black);
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 1.4px;
-            transition: var(--transition);
-        }
-
-        .recommend-btn:hover {
-            background: var(--black);
-            color: var(--white);
-        }
-
-        /* FOOTER */
-        footer {
-            background: var(--black);
-            color: var(--white);
-            padding: 60px 5% 30px;
-        }
-
-        .footer-grid {
-            display: grid;
-            grid-template-columns: 1.3fr 1fr 1fr 1fr;
-            gap: 32px;
-            margin-bottom: 36px;
-        }
-
-        .footer-brand h3 {
-            font-size: 28px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            font-weight: 500;
-        }
-
-        .footer-brand p {
-            color: rgba(255, 255, 255, 0.75);
-            max-width: 320px;
-            font-size: 14px;
-        }
-
-        .footer-col h4 {
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1.8px;
-            margin-bottom: 18px;
-        }
-
-        .footer-col a {
-            display: block;
-            color: rgba(255, 255, 255, 0.75);
-            margin-bottom: 10px;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-
-        .footer-col a:hover {
-            color: var(--white);
-        }
-
-        .footer-bottom {
-            border-top: 1px solid rgba(255, 255, 255, 0.15);
-            padding-top: 22px;
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            flex-wrap: wrap;
-            color: rgba(255, 255, 255, 0.65);
-            font-size: 13px;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(14px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @media (max-width: 1100px) {
-            .cart-wrapper {
-                grid-template-columns: 1fr;
-            }
-
-            .summary-section {
-                position: static;
-            }
-
-            .recommend-card {
-                min-width: calc(50% - 11px);
-            }
-
-            .footer-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 768px) {
-            .top-bar {
-                font-size: 10px;
-                padding: 10px 14px;
-            }
-
-            .navbar {
-                padding: 16px 5%;
-            }
-
-            .logo {
-                font-size: 20px;
-                letter-spacing: 3px;
-            }
-
-            .icon-link {
-                width: 38px;
-                height: 38px;
-            }
-
-            .icon-link svg {
-                width: 17px;
-                height: 17px;
-            }
-
-            .bag-count {
-                min-width: 16px;
-                height: 16px;
-                font-size: 9px;
-            }
-
-            .page-hero {
-                padding-top: 40px;
-            }
-
-            .cart-item {
-                grid-template-columns: 1fr;
-            }
-
-            .item-check-wrap {
-                justify-content: flex-start;
-                padding-top: 0;
-            }
-
-            .cart-item-image {
-                height: 260px;
-            }
-
-            .item-top {
-                align-items: start;
-            }
-
-            .item-bottom {
-                align-items: stretch;
-            }
-
-            .item-prices {
-                text-align: left;
-            }
-
-            .promo-box {
-                flex-direction: column;
-            }
-
-            .trust-badges {
-                grid-template-columns: 1fr;
-            }
-
-            .recommend-card {
-                min-width: 100%;
-            }
-
-            .footer-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .footer-bottom {
-                flex-direction: column;
-            }
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --black:#000;--white:#fff;--soft-white:#fafafa;--light-gray:#efefef;
+            --text-gray:#777;--dark-gray:#1a1a1a;--transition:.3s ease;
+            --shadow:0 12px 30px rgba(0,0,0,.08)
+        }
+
+        html,body{min-height:100vh;overflow-y:auto}
+        body{font-family:"Outfit","Helvetica Neue",Arial,sans-serif;background:#fff;color:#000;line-height:1.5}
+        a{text-decoration:none;color:inherit}
+        button,input{font-family:inherit}
+        img{width:100%;display:block}
+        .font-display{font-family:'Cormorant Garamond',serif}
+
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes slideDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+
+        .anim-slide-down{animation:slideDown .6s ease forwards}
+        .nav-link{position:relative}
+        .nav-link::after{content:'';position:absolute;bottom:-2px;left:0;width:0;height:1px;background:currentColor;transition:.3s}
+        html[dir="rtl"] .nav-link::after{left:auto;right:0}
+        .nav-link:hover::after{width:100%}
+
+        #logo-img{height:62px;width:auto;max-width:200px}
+        .mobile-menu{max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0}
+        .mobile-menu.open{max-height:900px;opacity:1}
+        .dropdown-link{color:rgba(255,255,255,.75);transition:.25s}
+        .dropdown-link:hover{color:#fff;transform:translateX(3px)}
+        html[dir="rtl"] .dropdown-link:hover{transform:translateX(-3px)}
+        .site-header svg{stroke:#fff!important}
+
+        .page-hero{padding:150px 5% 30px;display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap}
+        .page-hero h1{font-size:clamp(32px,5vw,64px);font-weight:500;letter-spacing:2px;text-transform:uppercase;line-height:1}
+        .page-hero p{max-width:500px;color:var(--text-gray);font-size:15px}
+
+        .cart-wrapper{display:grid;grid-template-columns:1.6fr .9fr;gap:48px;padding:20px 5% 80px;align-items:start}
+        .cart-count{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-gray);margin-bottom:18px}
+        .cart-actions-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+        .select-all-wrap{display:flex;align-items:center;gap:10px;font-size:13px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dark-gray)}
+        .cart-list{display:flex;flex-direction:column;gap:22px}
+
+        .cart-item{display:grid;grid-template-columns:auto 140px 1fr;gap:22px;padding:20px;border:1px solid #efefef;border-radius:18px;background:#fff;transition:.3s;animation:fadeUp .5s ease}
+        .cart-item:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+        .cart-item.selected{border-color:#000;box-shadow:0 12px 28px rgba(0,0,0,.09)}
+        .item-check-wrap{display:flex;align-items:start;justify-content:center;padding-top:6px}
+        .item-check{width:20px;height:20px;accent-color:black;cursor:pointer}
+        .cart-item-image{width:100%;height:180px;border-radius:14px;overflow:hidden;background:#f6f6f6}
+        .cart-item-image img{height:100%;object-fit:cover}
+        .cart-item-info{display:flex;flex-direction:column;justify-content:space-between;gap:14px}
+        .item-top{display:flex;justify-content:space-between;gap:20px}
+        .item-title{font-size:20px;font-weight:500;letter-spacing:.6px}
+        .remove-btn{border:none;background:transparent;font-size:24px;cursor:pointer;color:#999;transition:.3s}
+        .remove-btn:hover{color:#000;transform:scale(1.08)}
+        .item-meta{display:flex;flex-wrap:wrap;gap:18px;color:var(--text-gray);font-size:14px;text-transform:uppercase;letter-spacing:1.2px}
+        .item-bottom{display:flex;justify-content:space-between;align-items:end;gap:20px;flex-wrap:wrap}
+        .qty-box{display:inline-flex;align-items:center;border:1px solid #ddd;border-radius:999px;overflow:hidden;background:#fff}
+        .qty-btn{width:42px;height:42px;border:none;background:transparent;font-size:18px;cursor:pointer;transition:.3s}
+        .qty-btn:hover{background:#f5f5f5}
+        .qty-value{width:55px;text-align:center;border:0;outline:none;font-size:15px;font-weight:500}
+        .item-prices{text-align:right}
+        html[dir="rtl"] .item-prices{text-align:left}
+        .unit-price{color:var(--text-gray);font-size:13px;letter-spacing:1px;text-transform:uppercase}
+        .line-total{font-size:22px;font-weight:600;margin-top:4px}
+
+        .summary-section{position:sticky;top:110px}
+        .summary-card{border:1px solid #ececec;border-radius:20px;padding:28px;background:#fafafa;box-shadow:0 8px 30px rgba(0,0,0,.04);animation:fadeUp .5s ease}
+        .summary-title{font-size:24px;font-weight:500;margin-bottom:24px;text-transform:uppercase;letter-spacing:1.5px}
+        .promo-box{display:flex;gap:10px;margin-bottom:24px}
+        .promo-input{flex:1;height:48px;border:1px solid #dcdcdc;border-radius:999px;background:#fff;padding:0 16px;font-size:14px;outline:none}
+        .promo-btn{height:48px;padding:0 22px;border:none;border-radius:999px;background:#000;color:#fff;cursor:pointer;font-size:13px;letter-spacing:1px;text-transform:uppercase}
+        .summary-row{display:flex;justify-content:space-between;gap:15px;padding:12px 0;color:#1a1a1a;font-size:15px;border-bottom:1px solid #e8e8e8}
+        .summary-row.total{border-bottom:none;padding-top:18px;margin-top:4px;font-size:20px;font-weight:700}
+        .delivery-note,.selected-note{margin-top:14px;font-size:13px;color:#777;letter-spacing:.5px}
+        .selected-note{text-transform:uppercase;letter-spacing:1px;font-size:12px}
+        .checkout-btn,.continue-btn{width:100%;height:54px;border-radius:999px;font-size:14px;letter-spacing:1.4px;text-transform:uppercase;cursor:pointer;transition:.3s;margin-top:16px}
+        .checkout-btn{background:#000;color:#fff;border:none;font-weight:600}
+        .checkout-btn:hover{transform:translateY(-2px);opacity:.94}
+        .continue-btn{background:transparent;color:#000;border:1px solid #000}
+        .continue-btn:hover{background:#000;color:#fff}
+        .secure-note{margin-top:18px;text-align:center;font-size:12px;color:#777;letter-spacing:1px;text-transform:uppercase}
+        .trust-badges{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+        .trust-badge{border:1px solid #e7e7e7;border-radius:14px;background:#fff;padding:14px 10px;text-align:center;font-size:12px;color:#777;line-height:1.4}
+        .trust-badge strong{display:block;color:#000;font-size:12px;margin-bottom:3px;text-transform:uppercase;letter-spacing:1px}
+
+        .empty-cart{display:none;border:1px solid #ededed;border-radius:24px;padding:50px 24px;text-align:center;background:linear-gradient(to bottom,#fff,#fafafa);animation:fadeUp .4s ease}
+        .empty-cart.show{display:block}
+        .empty-cart h2{font-size:34px;margin-bottom:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase}
+        .empty-cart p{max-width:520px;margin:0 auto 28px;color:#777;font-size:15px}
+        .empty-cart .continue-btn{width:auto;min-width:220px;padding:0 26px;display:inline-block}
+
+        @media(max-width:1100px){
+            .cart-wrapper{grid-template-columns:1fr}
+            .summary-section{position:static}
+        }
+        @media(max-width:768px){
+            #logo-img{height:50px}
+            .page-hero{padding-top:120px}
+            .cart-item{grid-template-columns:1fr}
+            .item-check-wrap{justify-content:flex-start;padding-top:0}
+            .cart-item-image{height:260px}
+            .item-prices{text-align:left}
+            .promo-box{flex-direction:column}
+            .trust-badges{grid-template-columns:1fr}
         }
     </style>
 </head>
+
 <body>
 
-<!-- HEADER -->
-<header>
-    <div class="top-bar">Complimentary shipping on orders over $250</div>
+<header class="site-header w-full fixed top-0 left-0 z-50 anim-slide-down" style="background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,0.08);">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
-    <div class="navbar icons-only-header">
-        <a href="index.html" class="logo logo-link">Demoiselle</a>
+        <a href="index.php?lang=<?= h($lang) ?>" class="flex items-center">
+            <img src="pic/lolo1.png" alt="demoiselle Logo" id="logo-img">
+        </a>
 
-        <div class="nav-right icons-nav">
-            <!-- Collections / Search -->
-            <a href="new collection_2.html" class="icon-link" aria-label="Collections">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"></circle>
-                    <path d="M20 20L16.65 16.65" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-                </svg>
-            </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm tracking-wider uppercase font-light" style="color:rgba(255,255,255,0.7);">
+            <a href="index.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['home']) ?></a>
+            <a href="new_collection.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['collection']) ?></a>
+            <a href="shope.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['shop']) ?></a>
+            <a href="about.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['our_story']) ?></a>
+            <a href="contact.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['contact']) ?></a>
+        </nav>
 
-            <!-- Wishlist -->
-            <a href="wishlist.html" class="icon-link" aria-label="Wishlist">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 20.5L10.55 19.18C5.4 14.5 2 11.42 2 7.65C2 4.57 4.42 2.15 7.5 2.15C9.24 2.15 10.91 2.96 12 4.23C13.09 2.96 14.76 2.15 16.5 2.15C19.58 2.15 22 4.57 22 7.65C22 11.42 18.6 14.5 13.45 19.18L12 20.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
-                </svg>
-            </a>
+        <div class="hidden md:flex items-center gap-4 relative text-white">
+            <button id="main-dropdown-btn" title="Menu">
+                <i data-lucide="menu" style="width:24px;height:24px;"></i>
+            </button>
 
-            <!-- Account -->
-            <a href="profile.html" class="icon-link" aria-label="Account">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"></circle>
-                    <path d="M4 20C4 16.7 7.1 14 12 14C16.9 14 20 16.7 20 20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-                </svg>
-            </a>
+            <div id="main-dropdown" class="hidden absolute top-10 <?= ($lang === 'ar' || $lang === 'he') ? 'left-0 text-right' : 'right-0 text-left' ?> w-96 max-h-[80vh] overflow-y-auto bg-black border border-white/10 rounded-2xl p-6 shadow-2xl z-[200]">
+                <h4 class="text-xs tracking-[0.3em] uppercase text-white/40 mb-3"><?= h($t['languages']) ?></h4>
 
-            <!-- Bag -->
-            <a href="cart.html" class="icon-link bag-icon-wrap" aria-label="Bag">
-                <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M6 8H18L17 20H7L6 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
-                    <path d="M9 9V7C9 5.34 10.34 4 12 4C13.66 4 15 5.34 15 7V9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-                </svg>
-                <span class="bag-count" id="bagCount">0</span>
-            </a>
+                <div class="flex gap-3 mb-6">
+                    <a href="<?= h(langUrl('en')) ?>" class="px-3 py-1 border border-white/20 rounded-full text-xs hover:bg-white hover:text-black transition">EN</a>
+                    <a href="<?= h(langUrl('ar')) ?>" class="px-3 py-1 border border-white/20 rounded-full text-xs hover:bg-white hover:text-black transition">AR</a>
+                    <a href="<?= h(langUrl('he')) ?>" class="px-3 py-1 border border-white/20 rounded-full text-xs hover:bg-white hover:text-black transition">HE</a>
+                </div>
+
+                <h4 class="text-xs tracking-[0.3em] uppercase text-white/40 mb-3"><?= h($t['categories']) ?></h4>
+
+                <div class="grid grid-cols-2 gap-3 text-sm mb-6">
+                    <?php if ($categories_result && $categories_result->num_rows > 0): ?>
+                        <?php while($cat = $categories_result->fetch_assoc()): ?>
+                            <a class="dropdown-link" href="<?= h($cat['category_key']) ?>.php?lang=<?= h($lang) ?>">
+                                <?= h($cat['category_name']) ?>
+                            </a>
+                        <?php endwhile; ?>
+                    <?php endif; ?>
+                </div>
+
+                <h4 class="text-xs tracking-[0.3em] uppercase text-white/40 mb-3"><?= h($t['pages']) ?></h4>
+
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <a class="dropdown-link" href="index.php?lang=<?= h($lang) ?>"><?= h($t['home']) ?></a>
+                    <a class="dropdown-link" href="new_collection.php?lang=<?= h($lang) ?>"><?= h($t['new_collection']) ?></a>
+                    <a class="dropdown-link" href="shope.php?lang=<?= h($lang) ?>"><?= h($t['shop']) ?></a>
+                    <a class="dropdown-link" href="search.php?lang=<?= h($lang) ?>"><?= h($t['search']) ?></a>
+                    <a class="dropdown-link" href="cart.php?lang=<?= h($lang) ?>"><?= h($t['cart']) ?></a>
+                    <a class="dropdown-link" href="wishlist.php?lang=<?= h($lang) ?>"><?= h($t['wishlist']) ?></a>
+                    <a class="dropdown-link" href="order.php?lang=<?= h($lang) ?>"><?= h($t['order']) ?></a>
+                    <a class="dropdown-link" href="profile.php?lang=<?= h($lang) ?>"><?= h($t['profile']) ?></a>
+                    <a class="dropdown-link" href="contact.php?lang=<?= h($lang) ?>"><?= h($t['contact']) ?></a>
+                    <a class="dropdown-link" href="about.php?lang=<?= h($lang) ?>"><?= h($t['about']) ?></a>
+                    <a class="dropdown-link" href="signin.php?lang=<?= h($lang) ?>"><?= h($t['sign_in']) ?></a>
+                    <a class="dropdown-link" href="signup.php?lang=<?= h($lang) ?>"><?= h($t['sign_up']) ?></a>
+                    <a class="dropdown-link" href="logout.php"><?= h($t['logout']) ?></a>
+                </div>
+            </div>
+
+            <button onclick="goPage('search.php?lang=<?= h($lang) ?>', true)">
+                <i data-lucide="search" style="width:18px;height:18px;"></i>
+            </button>
+
+            <button onclick="goUserPage()">
+                <i data-lucide="user" style="width:18px;height:18px;"></i>
+            </button>
+
+            <button onclick="goPage('wishlist.php?lang=<?= h($lang) ?>', true)" class="relative">
+                <i data-lucide="heart" style="width:18px;height:18px;"></i>
+                <span id="wishlist-count" class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black <?= $wishlistCount > 0 ? '' : 'hidden' ?>">
+                    <?= $wishlistCount ?>
+                </span>
+            </button>
+
+            <button onclick="goPage('cart.php?lang=<?= h($lang) ?>', true)" class="relative">
+                <i data-lucide="shopping-bag" style="width:18px;height:18px;"></i>
+                <span id="cart-count" class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black <?= $totalQty > 0 ? '' : 'hidden' ?>">
+                    <?= $totalQty ?>
+                </span>
+            </button>
+
+            <?php if ($isLoggedIn): ?>
+                <span class="text-xs text-white/60"><?= h($currentUserName) ?></span>
+            <?php endif; ?>
         </div>
+
+        <button class="md:hidden text-white" id="mobile-toggle">
+            <i data-lucide="menu" style="width:24px;height:24px;"></i>
+        </button>
+    </div>
+
+    <div class="mobile-menu md:hidden px-6 pb-4" id="mobile-menu">
+        <nav class="flex flex-col gap-4 text-sm tracking-wider uppercase font-light pt-2" style="color:rgba(255,255,255,0.7); border-top:1px solid rgba(255,255,255,0.08);">
+            <a href="index.php?lang=<?= h($lang) ?>"><?= h($t['home']) ?></a>
+            <a href="new_collection.php?lang=<?= h($lang) ?>"><?= h($t['collection']) ?></a>
+            <a href="shope.php?lang=<?= h($lang) ?>"><?= h($t['shop']) ?></a>
+            <a href="about.php?lang=<?= h($lang) ?>"><?= h($t['our_story']) ?></a>
+            <a href="contact.php?lang=<?= h($lang) ?>"><?= h($t['contact']) ?></a>
+
+            <div class="flex gap-3 pt-2">
+                <a href="<?= h(langUrl('en')) ?>">EN</a>
+                <a href="<?= h(langUrl('ar')) ?>">AR</a>
+                <a href="<?= h(langUrl('he')) ?>">HE</a>
+            </div>
+
+            <button onclick="goUserPage()" class="text-left"><?= h($t['user_signin']) ?></button>
+            <button onclick="goPage('cart.php?lang=<?= h($lang) ?>', true)" class="text-left"><?= h($t['cart']) ?> (<?= $totalQty ?>)</button>
+            <button onclick="goPage('wishlist.php?lang=<?= h($lang) ?>', true)" class="text-left"><?= h($t['wishlist']) ?> (<?= $wishlistCount ?>)</button>
+        </nav>
     </div>
 </header>
 
-<!-- HERO -->
 <section class="page-hero">
     <div>
         <h1>Your Bag</h1>
@@ -916,145 +400,82 @@
     </p>
 </section>
 
-<!-- MAIN -->
 <main class="cart-wrapper">
-    <!-- LEFT -->
     <section class="cart-section">
-        <div class="cart-count" id="cartCount">3 items in your bag</div>
+        <div class="cart-count" id="cartCount">
+            <?= $totalQty ?> <?= $totalQty == 1 ? 'item' : 'items' ?> in your bag
+        </div>
 
         <div class="cart-actions-top">
             <label class="select-all-wrap">
-                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)">
+                <input type="checkbox" id="selectAll" checked onchange="toggleSelectAll(this)">
                 <span>Select All Items</span>
             </label>
         </div>
 
-        <div class="empty-cart" id="emptyCart">
+        <div class="empty-cart <?= empty($cartItems) ? 'show' : '' ?>" id="emptyCart">
             <h2>Your Bag Is Empty</h2>
-            <p>
-                You haven’t added anything yet. Discover timeless essentials,
-                sharp tailoring, and elevated monochrome pieces for a refined wardrobe.
-            </p>
+            <p>You haven’t added anything yet. Discover timeless essentials and elevated pieces.</p>
             <button class="continue-btn" onclick="goShopping()">Continue Shopping</button>
         </div>
 
-        <div class="cart-list" id="cartList">
+        <div class="cart-list" id="cartList" style="<?= empty($cartItems) ? 'display:none;' : '' ?>">
+            <?php foreach ($cartItems as $item): ?>
+                <article class="cart-item selected"
+                         data-price="<?= h($item['price']) ?>"
+                         data-cart-id="<?= (int)$item['cart_id'] ?>">
 
-            <!-- ITEM 1 -->
-            <article class="cart-item selected" data-price="120" data-id="1">
-                <div class="item-check-wrap">
-                    <input type="checkbox" class="item-check" checked onchange="updateCart()">
-                </div>
+                    <div class="item-check-wrap">
+                        <input type="checkbox" class="item-check" checked onchange="updateCart()">
+                    </div>
 
-                <div class="cart-item-image">
-                    <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80" alt="Black Tailored Blazer">
-                </div>
+                    <div class="cart-item-image">
+                        <img src="<?= h($item['image']) ?>" alt="<?= h($item['product_name']) ?>">
+                    </div>
 
-                <div class="cart-item-info">
-                    <div class="item-top">
-                        <div>
-                            <h3 class="item-title">Black Tailored Blazer</h3>
-                            <div class="item-meta">
-                                <span>Size: M</span>
-                                <span>Color: Black</span>
+                    <div class="cart-item-info">
+                        <div class="item-top">
+                            <div>
+                                <h3 class="item-title"><?= h($item['product_name']) ?></h3>
+                                <div class="item-meta">
+                                    <span>Size: <?= h($item['size']) ?></span>
+                                    <span>Color: <?= h($item['color']) ?></span>
+                                </div>
+                            </div>
+
+                            <form method="POST">
+                                <input type="hidden" name="cart_id" value="<?= (int)$item['cart_id'] ?>">
+                                <button class="remove-btn" name="delete_item" type="submit">×</button>
+                            </form>
+                        </div>
+
+                        <div class="item-bottom">
+                            <form method="POST" class="qty-box">
+                                <input type="hidden" name="cart_id" value="<?= (int)$item['cart_id'] ?>">
+
+                                <button type="button" class="qty-btn" onclick="changeQty(this, -1)">−</button>
+
+                                <input class="qty-value"
+                                       name="quantity"
+                                       value="<?= (int)$item['cart_qty'] ?>"
+                                       readonly>
+
+                                <button type="button" class="qty-btn" onclick="changeQty(this, 1)">+</button>
+
+                                <button name="update_qty" type="submit" style="display:none;"></button>
+                            </form>
+
+                            <div class="item-prices">
+                                <div class="unit-price">$<?= number_format((float)$item['price'], 2) ?> each</div>
+                                <div class="line-total">$<?= number_format((float)$item['line_total'], 2) ?></div>
                             </div>
                         </div>
-                        <button class="remove-btn" onclick="removeItem(this)">×</button>
                     </div>
-
-                    <div class="item-bottom">
-                        <div class="qty-box">
-                            <button class="qty-btn" onclick="changeQty(this, -1)">−</button>
-                            <span class="qty-value">1</span>
-                            <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
-                        </div>
-
-                        <div class="item-prices">
-                            <div class="unit-price">$120 each</div>
-                            <div class="line-total">$120</div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-
-            <!-- ITEM 2 -->
-            <article class="cart-item selected" data-price="95" data-id="2">
-                <div class="item-check-wrap">
-                    <input type="checkbox" class="item-check" checked onchange="updateCart()">
-                </div>
-
-                <div class="cart-item-image">
-                    <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80" alt="Minimal White Shirt">
-                </div>
-
-                <div class="cart-item-info">
-                    <div class="item-top">
-                        <div>
-                            <h3 class="item-title">Minimal White Shirt</h3>
-                            <div class="item-meta">
-                                <span>Size: S</span>
-                                <span>Color: White</span>
-                            </div>
-                        </div>
-                        <button class="remove-btn" onclick="removeItem(this)">×</button>
-                    </div>
-
-                    <div class="item-bottom">
-                        <div class="qty-box">
-                            <button class="qty-btn" onclick="changeQty(this, -1)">−</button>
-                            <span class="qty-value">2</span>
-                            <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
-                        </div>
-
-                        <div class="item-prices">
-                            <div class="unit-price">$95 each</div>
-                            <div class="line-total">$190</div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-
-            <!-- ITEM 3 -->
-            <article class="cart-item selected" data-price="160" data-id="3">
-                <div class="item-check-wrap">
-                    <input type="checkbox" class="item-check" checked onchange="updateCart()">
-                </div>
-
-                <div class="cart-item-image">
-                    <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80" alt="Structured Long Coat">
-                </div>
-
-                <div class="cart-item-info">
-                    <div class="item-top">
-                        <div>
-                            <h3 class="item-title">Structured Long Coat</h3>
-                            <div class="item-meta">
-                                <span>Size: L</span>
-                                <span>Color: Ivory</span>
-                            </div>
-                        </div>
-                        <button class="remove-btn" onclick="removeItem(this)">×</button>
-                    </div>
-
-                    <div class="item-bottom">
-                        <div class="qty-box">
-                            <button class="qty-btn" onclick="changeQty(this, -1)">−</button>
-                            <span class="qty-value">1</span>
-                            <button class="qty-btn" onclick="changeQty(this, 1)">+</button>
-                        </div>
-
-                        <div class="item-prices">
-                            <div class="unit-price">$160 each</div>
-                            <div class="line-total">$160</div>
-                        </div>
-                    </div>
-                </div>
-            </article>
-
+                </article>
+            <?php endforeach; ?>
         </div>
     </section>
 
-    <!-- RIGHT -->
     <aside class="summary-section">
         <div class="summary-card">
             <h2 class="summary-title">Order Summary</h2>
@@ -1066,17 +487,17 @@
 
             <div class="summary-row">
                 <span>Selected Items</span>
-                <span id="selectedItemsCount">4</span>
+                <span id="selectedItemsCount"><?= $totalQty ?></span>
             </div>
 
             <div class="summary-row">
                 <span>Subtotal</span>
-                <span id="subtotal">$470</span>
+                <span id="subtotal">$<?= number_format($subtotal, 2) ?></span>
             </div>
 
             <div class="summary-row">
                 <span>Shipping</span>
-                <span id="shipping">Free</span>
+                <span id="shipping"><?= $shipping == 0 ? 'Free' : '$' . number_format($shipping, 2) ?></span>
             </div>
 
             <div class="summary-row">
@@ -1086,16 +507,11 @@
 
             <div class="summary-row total">
                 <span>Total</span>
-                <span id="total">$470</span>
+                <span id="total">$<?= number_format($total, 2) ?></span>
             </div>
 
-            <div class="delivery-note" id="deliveryNote">
-                Estimated delivery: 3–5 business days
-            </div>
-
-            <div class="selected-note" id="selectedNote">
-                Checkout applies only to selected products
-            </div>
+            <div class="delivery-note">Estimated delivery: 3–5 business days</div>
+            <div class="selected-note">Checkout applies only to selected products</div>
 
             <button class="checkout-btn" onclick="goToCheckout()">Checkout</button>
             <button class="continue-btn" onclick="goShopping()">Continue Shopping</button>
@@ -1103,182 +519,136 @@
             <div class="secure-note">Secure Checkout • Encrypted Payment</div>
 
             <div class="trust-badges">
-                <div class="trust-badge">
-                    <strong>Free Returns</strong>
-                    30-day easy returns
-                </div>
-                <div class="trust-badge">
-                    <strong>Secure Pay</strong>
-                    Protected transactions
-                </div>
-                <div class="trust-badge">
-                    <strong>Fast Dispatch</strong>
-                    Ships within 24h
-                </div>
+                <div class="trust-badge"><strong>Free Returns</strong>30-day easy returns</div>
+                <div class="trust-badge"><strong>Secure Pay</strong>Protected transactions</div>
+                <div class="trust-badge"><strong>Fast Dispatch</strong>Ships within 24h</div>
             </div>
         </div>
     </aside>
 </main>
 
-<!-- RECOMMENDATIONS -->
-<section class="recommendations">
-    <div class="section-head">
-        <div>
-            <h2>You May Also Like</h2>
-            <p>
-                Curated recommendations to complete your look with elevated essentials.
+<footer id="footer" class="w-full py-16 px-6" style="background:#000; border-top:1px solid rgba(255,255,255,0.06); color:#fff;">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
+            <div>
+                <a href="index.php?lang=<?= h($lang) ?>" class="inline-block mb-4">
+                    <img src="pic/lolo1.png" alt="demoiselle Logo" class="h-10 w-auto">
+                </a>
+
+                <p class="text-xs font-light leading-relaxed" style="color:rgba(255,255,255,0.35);">
+                    <?= h($t['footer_desc']) ?>
+                </p>
+            </div>
+
+            <div>
+                <h4 class="text-[10px] tracking-[0.3em] uppercase mb-5" style="color:rgba(255,255,255,0.5);"><?= h($t['shop']) ?></h4>
+                <nav class="flex flex-col gap-3">
+                    <a href="shope.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['shop']) ?></a>
+                    <a href="new_collection.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['new_arrivals']) ?></a>
+                    <a href="wishlist.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['wishlist']) ?></a>
+                </nav>
+            </div>
+
+            <div>
+                <h4 class="text-[10px] tracking-[0.3em] uppercase mb-5" style="color:rgba(255,255,255,0.5);"><?= h($t['company']) ?></h4>
+                <nav class="flex flex-col gap-3">
+                    <a href="about.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['our_story']) ?></a>
+                    <a href="index.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['home']) ?></a>
+                </nav>
+            </div>
+
+            <div>
+                <h4 class="text-[10px] tracking-[0.3em] uppercase mb-5" style="color:rgba(255,255,255,0.5);"><?= h($t['support']) ?></h4>
+                <nav class="flex flex-col gap-3">
+                    <a href="https://www.instagram.com/demoisellepal" target="_blank" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['instagram']) ?></a>
+                    <a href="contact.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['contact_us']) ?></a>
+                    <a href="profile.php?lang=<?= h($lang) ?>" class="text-xs font-light hover:text-white" style="color:rgba(255,255,255,0.35);"><?= h($t['profile']) ?></a>
+                </nav>
+            </div>
+        </div>
+
+        <div class="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4" style="border-top:1px solid rgba(255,255,255,0.06);">
+            <p class="text-[10px] tracking-[0.2em]" style="color:rgba(255,255,255,0.25);">
+                <?= h($t['rights']) ?>
+            </p>
+
+            <p class="text-[10px] tracking-[0.2em]" style="color:rgba(255,255,255,0.25);">
+                <?= h($t['made']) ?>
             </p>
         </div>
 
-        <div class="recommend-top-actions">
-            <button class="slider-arrow" onclick="moveSlider(-1)">←</button>
-            <button class="slider-arrow" onclick="moveSlider(1)">→</button>
+        <div class="mt-8 flex flex-wrap gap-4">
+            <button onclick="goPage('order.php?lang=<?= h($lang) ?>', true)" class="px-4 py-2 bg-white text-black"><?= h($t['order']) ?></button>
+            <button onclick="window.location.href='new_collection.php?lang=<?= h($lang) ?>'" class="px-4 py-2 bg-white text-black"><?= h($t['new_collection']) ?></button>
+            <button onclick="goPage('wishlist.php?lang=<?= h($lang) ?>', true)" class="px-4 py-2 bg-white text-black"><?= h($t['wishlist']) ?></button>
+            <button onclick="goUserPage()" class="px-4 py-2 bg-white text-black"><?= h($t['profile']) ?></button>
+            <button onclick="window.location.href='shope.php?lang=<?= h($lang) ?>'" class="px-4 py-2 bg-white text-black"><?= h($t['shop']) ?></button>
         </div>
-    </div>
-
-    <div class="recommend-slider-wrap">
-        <div class="recommend-track" id="recommendTrack">
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80" alt="Silk Top">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Silk Satin Top</div>
-                    <div class="recommend-price">$89</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80" alt="Blazer">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Refined Black Blazer</div>
-                    <div class="recommend-price">$138</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80" alt="Coat">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Wool Blend Coat</div>
-                    <div class="recommend-price">$174</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80" alt="White Shirt">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Oversized Cotton Shirt</div>
-                    <div class="recommend-price">$92</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80" alt="Dress">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Elegant Black Dress</div>
-                    <div class="recommend-price">$149</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-
-            <div class="recommend-card">
-                <div class="recommend-image">
-                    <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80" alt="Trousers">
-                </div>
-                <div class="recommend-info">
-                    <div class="recommend-name">Wide-Leg Trousers</div>
-                    <div class="recommend-price">$110</div>
-                    <button class="recommend-btn">Add to Bag</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-    <div class="footer-grid">
-        <div class="footer-brand">
-            <h3>Demoiselle</h3>
-            <p>
-                Luxury essentials defined by clean tailoring, modern femininity,
-                and timeless monochrome elegance.
-            </p>
-        </div>
-
-        <div class="footer-col">
-            <h4>Shop</h4>
-            <a href="new collection_2.html">New Arrivals</a>
-            <a href="newcolc.html">Collections</a>
-            <a href="item3.html">Featured Piece</a>
-            <a href="wishlist.html">Wishlist</a>
-        </div>
-
-        <div class="footer-col">
-            <h4>Support</h4>
-            <a href="profile.html">Account</a>
-            <a href="ORDER_2.html">Checkout</a>
-            <a href="cart.html">Shopping Bag</a>
-            <a href="signIn.html">Sign In</a>
-        </div>
-
-        <div class="footer-col">
-            <h4>Explore</h4>
-            <a href="index.html">Home</a>
-            <a href="signup.html">Sign Up</a>
-            <a href="wishlist.html">Saved Items</a>
-            <a href="profile.html">Profile</a>
-        </div>
-    </div>
-
-    <div class="footer-bottom">
-        <span>© 2026 Demoiselle. All rights reserved.</span>
-        <span>Privacy Policy • Terms of Service</span>
     </div>
 </footer>
 
 <script>
+    lucide.createIcons();
+
+    const currentLang = "<?= h($lang) ?>";
+    const isLoggedIn = true;
     let promoDiscount = 0;
-    let sliderIndex = 0;
+
+    function withLang(page) {
+        if (page.includes('?')) return page + '&lang=' + currentLang;
+        return page + '?lang=' + currentLang;
+    }
+
+    function goPage(page, protectedPage = false) {
+        if (protectedPage && !isLoggedIn) {
+            window.location.href = withLang('signin.php');
+            return;
+        }
+        window.location.href = page;
+    }
+
+    function goUserPage() {
+        window.location.href = withLang('profile.php');
+    }
+
+    const dropdownBtn = document.getElementById('main-dropdown-btn');
+    const dropdown = document.getElementById('main-dropdown');
+
+    if (dropdownBtn && dropdown) {
+        dropdownBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('hidden');
+        });
+
+        dropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', function() {
+            dropdown.classList.add('hidden');
+        });
+    }
+
+    document.getElementById('mobile-toggle')?.addEventListener('click', () => {
+        document.getElementById('mobile-menu').classList.toggle('open');
+    });
 
     function formatPrice(value) {
-        return "$" + value.toFixed(0);
+        return "$" + value.toFixed(2);
     }
 
     function updateSelectedStyle() {
-        const items = document.querySelectorAll(".cart-item");
-        items.forEach(item => {
+        document.querySelectorAll(".cart-item").forEach(item => {
             const checkbox = item.querySelector(".item-check");
-            if (checkbox.checked) {
-                item.classList.add("selected");
-            } else {
-                item.classList.remove("selected");
-            }
+            item.classList.toggle("selected", checkbox.checked);
         });
     }
 
     function updateSelectAllState() {
-        const itemChecks = document.querySelectorAll(".item-check");
-        const checkedItems = document.querySelectorAll(".item-check:checked");
+        const checks = document.querySelectorAll(".item-check");
+        const checked = document.querySelectorAll(".item-check:checked");
         const selectAll = document.getElementById("selectAll");
-
-        if (itemChecks.length > 0 && checkedItems.length === itemChecks.length) {
-            selectAll.checked = true;
-        } else {
-            selectAll.checked = false;
-        }
+        if (selectAll) selectAll.checked = checks.length > 0 && checks.length === checked.length;
     }
 
     function updateCart() {
@@ -1289,7 +659,8 @@
 
         items.forEach(item => {
             const price = parseFloat(item.dataset.price);
-            const qty = parseInt(item.querySelector(".qty-value").textContent);
+            const qtyInput = item.querySelector(".qty-value");
+            const qty = parseInt(qtyInput.value);
             const checked = item.querySelector(".item-check").checked;
             const lineTotal = price * qty;
 
@@ -1302,9 +673,7 @@
             }
         });
 
-        if (promoDiscount > subtotal) {
-            promoDiscount = 0;
-        }
+        if (promoDiscount > subtotal) promoDiscount = 0;
 
         const shippingValue = subtotal > 0 ? (subtotal >= 250 ? 0 : 15) : 0;
         const total = Math.max(subtotal + shippingValue - promoDiscount, 0);
@@ -1314,26 +683,14 @@
         document.getElementById("shipping").textContent = shippingValue === 0 ? "Free" : formatPrice(shippingValue);
         document.getElementById("total").textContent = formatPrice(total);
         document.getElementById("selectedItemsCount").textContent = selectedItemsCount;
+
         document.getElementById("cartCount").textContent =
             totalItemsInBag + (totalItemsInBag === 1 ? " item in your bag" : " items in your bag");
-        document.getElementById("bagCount").textContent = totalItemsInBag;
 
-        const emptyCart = document.getElementById("emptyCart");
-        const cartList = document.getElementById("cartList");
-        const summaryCard = document.querySelector(".summary-card");
-
-        if (items.length === 0) {
-            emptyCart.classList.add("show");
-            cartList.style.display = "none";
-            summaryCard.style.opacity = "0.55";
-            summaryCard.style.pointerEvents = "none";
-            document.getElementById("cartCount").textContent = "0 items in your bag";
-            document.getElementById("bagCount").textContent = "0";
-        } else {
-            emptyCart.classList.remove("show");
-            cartList.style.display = "flex";
-            summaryCard.style.opacity = "1";
-            summaryCard.style.pointerEvents = "auto";
+        const topCart = document.getElementById("cart-count");
+        if (topCart) {
+            topCart.textContent = totalItemsInBag;
+            topCart.classList.toggle("hidden", totalItemsInBag === 0);
         }
 
         updateSelectedStyle();
@@ -1341,40 +698,35 @@
     }
 
     function changeQty(button, change) {
-        const qtyValue = button.parentElement.querySelector(".qty-value");
-        let currentQty = parseInt(qtyValue.textContent);
+        const form = button.closest("form");
+        const input = form.querySelector(".qty-value");
+        let qty = parseInt(input.value);
 
-        currentQty += change;
-        if (currentQty < 1) currentQty = 1;
+        qty += change;
+        if (qty < 1) qty = 1;
 
-        qtyValue.textContent = currentQty;
+        input.value = qty;
         updateCart();
+
+        form.querySelector("[name='update_qty']").click();
     }
 
-    function removeItem(button) {
-        const item = button.closest(".cart-item");
-        item.remove();
-        updateCart();
-    }
-
-    function toggleSelectAll(masterCheckbox) {
-        const itemChecks = document.querySelectorAll(".item-check");
-        itemChecks.forEach(check => {
-            check.checked = masterCheckbox.checked;
+    function toggleSelectAll(master) {
+        document.querySelectorAll(".item-check").forEach(check => {
+            check.checked = master.checked;
         });
         updateCart();
     }
 
     function applyPromo() {
-        const promoInput = document.getElementById("promoInput").value.trim().toUpperCase();
-        const subtotalText = document.getElementById("subtotal").textContent.replace("$", "");
-        const subtotal = parseFloat(subtotalText);
+        const code = document.getElementById("promoInput").value.trim().toUpperCase();
+        const subtotal = parseFloat(document.getElementById("subtotal").textContent.replace("$", ""));
 
-        if (promoInput === "WELCOME10") {
+        if (code === "WELCOME10") {
             promoDiscount = subtotal * 0.10;
-        } else if (promoInput === "LUXE20") {
+        } else if (code === "LUXE20") {
             promoDiscount = 20;
-        } else if (promoInput === "") {
+        } else if (code === "") {
             promoDiscount = 0;
         } else {
             alert("Invalid promo code");
@@ -1385,73 +737,26 @@
     }
 
     function goShopping() {
-        window.location.href = "home_2.html";
+        window.location.href = "shope.php?lang=<?= h($lang) ?>";
     }
 
     function goToCheckout() {
-        const items = document.querySelectorAll(".cart-item");
-        const selectedProducts = [];
+        const selected = [];
 
-        items.forEach(item => {
-            const checkbox = item.querySelector(".item-check");
-
-            if (checkbox && checkbox.checked) {
-                const name = item.querySelector(".item-title").textContent.trim();
-                const metaSpans = item.querySelectorAll(".item-meta span");
-                const size = metaSpans[0] ? metaSpans[0].textContent.replace("Size:", "").trim() : "";
-                const color = metaSpans[1] ? metaSpans[1].textContent.replace("Color:", "").trim() : "";
-                const quantity = parseInt(item.querySelector(".qty-value").textContent);
-                const unitPrice = parseFloat(item.dataset.price);
-                const totalPrice = unitPrice * quantity;
-                const image = item.querySelector("img").getAttribute("src");
-
-                selectedProducts.push({
-                    name,
-                    size,
-                    color,
-                    quantity,
-                    unitPrice,
-                    totalPrice,
-                    image
-                });
+        document.querySelectorAll(".cart-item").forEach(item => {
+            if (item.querySelector(".item-check").checked) {
+                selected.push(item.dataset.cartId);
             }
         });
 
-        if (selectedProducts.length === 0) {
+        if (selected.length === 0) {
             alert("Please select at least one item before checkout.");
             return;
         }
 
-        localStorage.setItem("selectedCheckoutItems", JSON.stringify(selectedProducts));
-        window.location.href = "ORDER_2.html";
+        localStorage.setItem("selectedCartIds", JSON.stringify(selected));
+        window.location.href = "order.php?lang=<?= h($lang) ?>";
     }
-
-    function moveSlider(direction) {
-        const track = document.getElementById("recommendTrack");
-        const cards = document.querySelectorAll(".recommend-card");
-        if (!cards.length) return;
-
-        let visibleCards = 4;
-        if (window.innerWidth <= 768) {
-            visibleCards = 1;
-        } else if (window.innerWidth <= 1100) {
-            visibleCards = 2;
-        }
-
-        const maxIndex = Math.max(cards.length - visibleCards, 0);
-        sliderIndex += direction;
-
-        if (sliderIndex < 0) sliderIndex = 0;
-        if (sliderIndex > maxIndex) sliderIndex = maxIndex;
-
-        const cardWidth = cards[0].offsetWidth + 22;
-        track.style.transform = `translateX(-${sliderIndex * cardWidth}px)`;
-    }
-
-    window.addEventListener("resize", () => {
-        sliderIndex = 0;
-        document.getElementById("recommendTrack").style.transform = "translateX(0)";
-    });
 
     updateCart();
 </script>

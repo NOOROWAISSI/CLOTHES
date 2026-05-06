@@ -1,506 +1,1017 @@
+<?php
+global $conn;
+include_once "db.php";
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}
+
+function normalizeColor($color) {
+    $c = strtolower(trim((string)$color));
+
+    $map = [
+            'black'=>'Black','اسود'=>'Black','أسود'=>'Black',
+            'white'=>'White','ابيض'=>'White','أبيض'=>'White',
+            'blue'=>'Blue','navy'=>'Navy','navy blue'=>'Navy',
+            'dark blue'=>'Dark Blue','light blue'=>'Light Blue',
+            'red'=>'Red','pink'=>'Pink','green'=>'Green',
+            'gray'=>'Gray','grey'=>'Gray','brown'=>'Brown',
+            'beige'=>'Beige','purple'=>'Purple','yellow'=>'Yellow','gold'=>'Gold'
+    ];
+
+    return $map[$c] ?? ucwords($c);
+}
+
+function colorCss($color) {
+    $c = strtolower(trim((string)$color));
+
+    $map = [
+            'black'=>'#000000','white'=>'#ffffff','blue'=>'#2563eb',
+            'navy'=>'#1e3a8a','navy blue'=>'#1e3a8a',
+            'dark blue'=>'#1e40af','light blue'=>'#93c5fd',
+            'red'=>'#ef4444','pink'=>'#ec4899','green'=>'#22c55e',
+            'gray'=>'#71717a','grey'=>'#71717a','brown'=>'#92400e',
+            'beige'=>'#d6b98c','purple'=>'#a855f7',
+            'yellow'=>'#eab308','gold'=>'#fbbf24'
+    ];
+
+    return $map[$c] ?? '#777777';
+}
+
+$isLoggedIn = isset($_SESSION['user_id']);
+$currentUserName = $_SESSION['user_name'] ?? ($_SESSION['full_name'] ?? '');
+
+$lang = $_GET['lang'] ?? 'en';
+$lang = in_array($lang, ['en','ar','he']) ? $lang : 'en';
+
+$wishlistIds = [];
+
+if ($isLoggedIn) {
+    $uid = (int)$_SESSION['user_id'];
+
+    $wq = $conn->prepare("SELECT product_id FROM favorites WHERE user_id=?");
+    $wq->bind_param("i", $uid);
+    $wq->execute();
+    $wr = $wq->get_result();
+
+    while ($r = $wr->fetch_assoc()) {
+        $wishlistIds[] = (int)$r['product_id'];
+    }
+}
+
+$products = [];
+
+$sql = "
+SELECT
+    p.product_id,
+    p.price,
+    p.category_id,
+    p.collection_id,
+    COALESCE(cl.is_new, 0) AS is_new,
+
+    COALESCE(pt.product_name, CONCAT('Product #', p.product_id)) AS product_name,
+    COALESCE(pt.description, '') AS description,
+
+    COALESCE(ct.category_name, c.category_key, 'No Category') AS category_name,
+    COALESCE(clt.collection_name, cl.collection_key, 'No Collection') AS collection_name,
+
+    pv.variant_id,
+    pv.color,
+    pv.size,
+    pv.quantity,
+    COALESCE(pv.variant_image_url, '') AS variant_image_url,
+
+    COALESCE(pi.image_url, '') AS image_url
+
+FROM products p
+
+LEFT JOIN product_translations pt
+    ON p.product_id = pt.product_id AND pt.language_code = ?
+
+LEFT JOIN categories c
+    ON p.category_id = c.category_id
+
+LEFT JOIN category_translations ct
+    ON c.category_id = ct.category_id AND ct.language_code = ?
+
+LEFT JOIN collections cl
+    ON p.collection_id = cl.collection_id
+
+LEFT JOIN collection_translations clt
+    ON cl.collection_id = clt.collection_id AND clt.language_code = ?
+
+LEFT JOIN product_variants pv
+    ON p.product_id = pv.product_id
+
+LEFT JOIN product_images pi
+    ON p.product_id = pi.product_id AND pi.is_main = 1
+
+ORDER BY p.created_at DESC, p.product_id DESC, pv.variant_id ASC
+";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("sss", $lang, $lang, $lang);
+$stmt->execute();
+$res = $stmt->get_result();
+
+while ($r = $res->fetch_assoc()) {
+    $pid = (int)$r['product_id'];
+
+    if (!isset($products[$pid])) {
+        $products[$pid] = [
+                'id' => $pid,
+                'name' => $r['product_name'],
+                'price' => (float)$r['price'],
+                'category' => $r['category_name'],
+                'collection' => $r['collection_name'],
+                'is_new' => (int)$r['is_new'],
+                'main_image' => $r['image_url'] ?: 'pic/default.jpg',
+                'variants' => [],
+                'colors' => [],
+                'sizes' => []
+        ];
+    }
+
+    if (!empty($r['variant_id'])) {
+        $colorName = normalizeColor($r['color']);
+        $sizeName = trim((string)$r['size']);
+        $img = $r['variant_image_url'] ?: ($r['image_url'] ?: 'pic/default.jpg');
+
+        $products[$pid]['variants'][] = [
+                'variant_id' => (int)$r['variant_id'],
+                'color' => $colorName,
+                'size' => $sizeName,
+                'quantity' => (int)$r['quantity'],
+                'image' => $img
+        ];
+
+        if (!isset($products[$pid]['colors'][$colorName])) {
+            $products[$pid]['colors'][$colorName] = [
+                    'name' => $colorName,
+                    'css' => colorCss($r['color']),
+                    'image' => $img
+            ];
+        }
+
+        if ($sizeName !== '') {
+            $products[$pid]['sizes'][$sizeName] = $sizeName;
+        }
+    }
+}
+
+$products = array_values($products);
+
+$categories = [];
+$collections = [];
+$colors = [];
+$sizes = [];
+
+foreach ($products as $p) {
+    $categories[$p['category']] = $p['category'];
+    $collections[$p['collection']] = $p['collection'];
+
+    foreach ($p['colors'] as $c) {
+        $colors[$c['name']] = $c;
+    }
+
+    foreach ($p['sizes'] as $s) {
+        $sizes[$s] = $s;
+    }
+}
+
+ksort($categories);
+ksort($collections);
+ksort($colors);
+ksort($sizes);
+?>
 <!doctype html>
-<html lang="en" class="h-full">
+<html lang="<?= h($lang) ?>" class="h-full" <?= ($lang === 'ar' || $lang === 'he') ? 'dir="rtl"' : 'dir="ltr"' ?>>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DEMOISELLE</title>
+    <title>Demoiselle — Shop</title>
+
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    <script src="/_sdk/element_sdk.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&amp;family=Outfit:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+
     <style>
-        html, body { height: 100%; margin: 0; }
-        * { box-sizing: border-box; }
-        body { font-family: 'Outfit', sans-serif; }
-        .font-display { font-family: 'Playfair Display', serif; }
-        .app-root { height: 100%; width: 100%; overflow-y: auto; overflow-x: hidden; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { min-height:100%; }
+        body { font-family:'Outfit', sans-serif; background:#fafafa; color:#111; }
+        .font-display { font-family:'Cormorant Garamond', serif; }
 
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity:0; transform:translateY(30px); }
+            to { opacity:1; transform:translateY(0); }
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
+
         @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            0% { transform:translateX(0); }
+            100% { transform:translateX(-50%); }
         }
 
-        .anim-fade-up { animation: fadeUp 0.8s ease forwards; opacity: 0; }
-        .anim-fade-in { animation: fadeIn 0.6s ease forwards; opacity: 0; }
-        .anim-slide-down { animation: slideDown 0.5s ease forwards; opacity: 0; }
-        .anim-scale-in { animation: scaleIn 0.6s ease forwards; opacity: 0; }
+        .anim-fade { animation:fadeUp .8s ease forwards; opacity:0; }
+        .marquee-track { display:flex; width:max-content; animation:marquee 20s linear infinite; }
 
-        .delay-1 { animation-delay: 0.1s; }
-        .delay-2 { animation-delay: 0.2s; }
-        .delay-3 { animation-delay: 0.3s; }
-        .delay-4 { animation-delay: 0.4s; }
-        .delay-5 { animation-delay: 0.5s; }
-        .delay-6 { animation-delay: 0.6s; }
-        .delay-7 { animation-delay: 0.7s; }
-        .delay-8 { animation-delay: 0.8s; }
+        .product-card { transition:all .4s cubic-bezier(.25,.46,.45,.94); }
+        .product-card:hover { transform:translateY(-4px); }
+        .product-card:hover .product-img { transform:scale(1.05); }
+        .product-card:hover .quick-actions { opacity:1; transform:translateY(0); }
 
-        .product-card:hover .product-img {
-            transform: scale(1.05);
-        }
-        .product-card:hover .product-overlay {
-            opacity: 1;
-        }
-        .product-card:hover .quick-actions {
-            transform: translateY(0);
-            opacity: 1;
-        }
-        .product-img {
-            transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        .product-overlay {
-            opacity: 0;
-            transition: opacity 0.4s ease;
-        }
-        .quick-actions {
-            transform: translateY(15px);
-            opacity: 0;
-            transition: all 0.4s ease;
+        .product-img { transition:transform .6s cubic-bezier(.25,.46,.45,.94); }
+        .quick-actions { opacity:0; transform:translateY(10px); transition:all .3s ease; }
+
+        .new-ribbon {
+            position:absolute;
+            top:18px;
+            right:-43px;
+            width:160px;
+            transform:rotate(45deg);
+            background:#dc2626;
+            color:#fff;
+            text-align:center;
+            font-size:10px;
+            font-weight:700;
+            letter-spacing:.18em;
+            padding:6px 0;
+            z-index:20;
+            box-shadow:0 6px 18px rgba(0,0,0,.25);
         }
 
-        .filter-btn.active {
-            background: #000 !important;
-            color: #fff !important;
+        .filter-drawer {
+            position:fixed;
+            top:0;
+            right:0;
+            width:380px;
+            max-width:92vw;
+            height:100vh;
+            background:#fff;
+            z-index:100;
+            transform:translateX(100%);
+            transition:.35s ease;
+            box-shadow:-20px 0 60px rgba(0,0,0,.22);
+            overflow:auto;
         }
 
-        .marquee-track {
-            display: flex;
-            width: max-content;
-            animation: marquee 20s linear infinite;
+        html[dir="rtl"] .filter-drawer {
+            right:auto;
+            left:0;
+            transform:translateX(-100%);
         }
 
-        .fav-beat {
-            animation: scaleIn 0.3s ease;
+        .filter-drawer.open { transform:translateX(0); }
+
+        .filter-overlay {
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,.45);
+            z-index:90;
+            opacity:0;
+            pointer-events:none;
+            transition:.3s ease;
         }
 
-        .cart-badge-pop {
-            animation: scaleIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        .filter-overlay.open {
+            opacity:1;
+            pointer-events:auto;
         }
 
-        .toast-msg {
-            animation: slideDown 0.4s ease forwards, fadeIn 0.3s ease forwards;
+        .check-box {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            border:1px solid #e5e5e5;
+            padding:10px;
+            border-radius:12px;
+            cursor:pointer;
+            font-size:13px;
+            background:#fff;
         }
 
-        .hero-pattern {
-            background-image: repeating-linear-gradient(
-                    -45deg,
-                    transparent,
-                    transparent 40px,
-                    rgba(255,255,255,0.02) 40px,
-                    rgba(255,255,255,0.02) 80px
-            );
+        .check-box:hover { border-color:#111; }
+        .check-box input { accent-color:#000; }
+
+        .color-dot {
+            width:14px;
+            height:14px;
+            border-radius:50%;
+            border:1px solid rgba(0,0,0,.3);
+            display:inline-block;
         }
 
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f5f5f5; }
-        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: #999; }
+        .size-btn.active {
+            background:#000;
+            color:#fff;
+            border-color:#000;
+        }
+
+        .heart-btn.liked svg { fill:#000; }
+
+        .bag-panel {
+            transform:translateX(100%);
+            transition:.35s ease;
+        }
+
+        html[dir="rtl"] .bag-panel {
+            right:auto;
+            left:0;
+            transform:translateX(-100%);
+        }
+
+        .bag-panel.open { transform:translateX(0); }
+
+        .bag-overlay {
+            opacity:0;
+            pointer-events:none;
+            transition:.3s;
+        }
+
+        .bag-overlay.open {
+            opacity:1;
+            pointer-events:auto;
+        }
+
+        .toast {
+            transform:translateY(100px);
+            opacity:0;
+            transition:.35s;
+        }
+
+        .toast.show {
+            transform:translateY(0);
+            opacity:1;
+        }
+
+        .nav-link { position:relative; }
+
+        .nav-link::after {
+            content:'';
+            position:absolute;
+            bottom:-2px;
+            left:0;
+            width:0;
+            height:1px;
+            background:currentColor;
+            transition:.3s;
+        }
+
+        html[dir="rtl"] .nav-link::after {
+            left:auto;
+            right:0;
+        }
+
+        .nav-link:hover::after { width:100%; }
+
+        .mobile-menu {
+            max-height:0;
+            overflow:hidden;
+            transition:.4s;
+            opacity:0;
+        }
+
+        .mobile-menu.open {
+            max-height:900px;
+            opacity:1;
+        }
+
+        .dropdown-link {
+            color:rgba(255,255,255,.75);
+            transition:.25s;
+        }
+
+        .dropdown-link:hover {
+            color:#fff;
+            transform:translateX(3px);
+        }
+
+        html[dir="rtl"] .dropdown-link:hover {
+            transform:translateX(-3px);
+        }
+
+        #logo-img {
+            height:62px;
+            width:auto;
+            max-width:200px;
+        }
+
+        .selected-color {
+            outline:2px solid #000;
+            outline-offset:2px;
+        }
     </style>
-    <style>body { box-sizing: border-box; }</style>
-    <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
 </head>
-<body class="h-full">
-<div class="app-root bg-white text-black" id="appRoot"><!-- Toast -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2" style="pointer-events:none;"></div><!-- Cart Sidebar -->
-    <div id="cartOverlay" class="fixed inset-0 z-40 hidden">
-        <div class="absolute inset-0 bg-black/50" onclick="toggleCart()"></div>
-        <div id="cartPanel" class="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-2xl flex flex-col" style="transform:translateX(100%);transition:transform 0.4s cubic-bezier(.4,0,.2,1)">
-            <div class="flex items-center justify-between p-6 border-b border-black/10">
-                <h2 class="text-lg font-medium tracking-widest uppercase">Your Bag</h2><button onclick="toggleCart()" class="p-2 hover:bg-black/5 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div id="cartItems" class="flex-1 overflow-y-auto p-6"></div>
-            <div id="cartFooter" class="border-t border-black/10 p-6 hidden">
-                <div class="flex justify-between mb-4 text-sm tracking-wider uppercase">
-                    <span>Total</span><span id="cartTotal" class="font-medium">$0</span>
-                </div><button class="w-full bg-black text-white py-4 text-sm tracking-widest uppercase hover:bg-black/80 transition">Checkout</button>
-            </div>
-        </div>
-    </div><!-- Navbar -->
-    <nav class="fixed top-0 left-0 w-full z-30 bg-white/90 backdrop-blur-md border-b border-black/5 anim-slide-down">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between h-16">
-            <div class="flex items-center gap-8"><a href="#" class="font-display text-2xl font-bold tracking-wider" id="logoText">
-                    <img src="pic/logo2.png" alt="logo" style="height:65px; object-fit:contain;">
-                </a>
-                <div class="hidden md:flex items-center gap-6 text-xs tracking-widest uppercase"><a href="#" class="hover:opacity-50 transition">New In</a> <a href="#" class="hover:opacity-50 transition">Women</a> <a href="#" class="hover:opacity-50 transition">Men</a> <a href="#" class="hover:opacity-50 transition">Sale</a>
-                </div>
-            </div>
-            <div class="flex items-center gap-4"><button class="p-2 hover:bg-black/5 rounded-full transition hidden sm:block"><i data-lucide="search" class="w-5 h-5"></i></button> <button class="p-2 hover:bg-black/5 rounded-full transition hidden sm:block"><i data-lucide="user" class="w-5 h-5"></i></button> <button id="favNavBtn" onclick="scrollToFavs()" class="p-2 hover:bg-black/5 rounded-full transition relative"> <i data-lucide="heart" class="w-5 h-5"></i> <span id="favCount" class="absolute -top-1 -right-1 w-5 h-5 bg-black text-white text-[10px] flex items-center justify-center rounded-full hidden">0</span> </button> <button onclick="toggleCart()" class="p-2 hover:bg-black/5 rounded-full transition relative"> <i data-lucide="shopping-bag" class="w-5 h-5"></i> <span id="cartCount" class="absolute -top-1 -right-1 w-5 h-5 bg-black text-white text-[10px] flex items-center justify-center rounded-full hidden">0</span> </button>
-            </div>
-        </div>
-    </nav><!-- Hero -->
-    <section class="relative bg-black text-white overflow-hidden" style="margin-top:64px;">
-        <div class="hero-pattern absolute inset-0"></div>
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-8 py-20 sm:py-32 flex flex-col items-center text-center">
-            <p class="text-xs tracking-[0.4em] uppercase mb-4 anim-fade-up delay-1 opacity-50" id="heroSubtext">Autumn / Winter 2025</p>
-            <h1 class="font-display text-5xl sm:text-7xl lg:text-8xl font-bold leading-none mb-6 anim-fade-up delay-2" id="heroHeading">NEW<br>
-                COLLECTION</h1>
-            <p class="text-sm tracking-wider max-w-md mx-auto mb-8 opacity-60 anim-fade-up delay-3">Redefining minimalism through precision tailoring and contemporary silhouettes.</p><a href="#products" class="inline-flex items-center gap-3 bg-white text-black px-8 py-4 text-xs tracking-widest uppercase hover:bg-white/90 transition anim-fade-up delay-4"> Shop Now <i data-lucide="arrow-right" class="w-4 h-4"></i> </a> <!-- Decorative -->
-        </div>
-    </section><!-- Marquee -->
-    <div class="border-y border-black/10 py-3 overflow-hidden bg-black/[0.02]">
-        <div class="marquee-track"><span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Free Shipping Over $150</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">New Arrivals Weekly</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Sustainable Fashion</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Easy Returns Within 30 Days</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Free Shipping Over $150</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">New Arrivals Weekly</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Sustainable Fashion</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">★</span> <span class="text-xs tracking-[0.3em] uppercase whitespace-nowrap px-8 opacity-40">Easy Returns Within 30 Days</span>
-        </div>
-    </div><!-- Products Section -->
-    <section id="products" class="max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-24">
-        <div class="text-center mb-12">
-            <h2 class="font-display text-3xl sm:text-4xl font-bold mb-2">Curated For You</h2>
-            <p class="text-sm opacity-50 tracking-wider">Handpicked pieces from our latest drop</p>
-        </div><!-- Filters -->
-        <div class="flex flex-wrap justify-center gap-2 mb-12" id="filterBar"><button class="filter-btn active px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="all" onclick="setFilter('all')">All</button> <button class="filter-btn px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="tops" onclick="setFilter('tops')">Tops</button> <button class="filter-btn px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="bottoms" onclick="setFilter('bottoms')">Bottoms</button> <button class="filter-btn px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="outerwear" onclick="setFilter('outerwear')">Outerwear</button> <button class="filter-btn px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="dresses" onclick="setFilter('dresses')">Dresses</button> <button class="filter-btn px-5 py-2 text-xs tracking-widest uppercase border border-black/20 rounded-full transition hover:bg-black hover:text-white" data-filter="accessories" onclick="setFilter('accessories')">Accessories</button>
-        </div><!-- Product Grid -->
-        <div id="productGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
-    </section><!-- Favorites Section -->
-    <section id="favSection" class="bg-black/[0.02] py-16 sm:py-24 hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8">
-            <div class="text-center mb-12">
-                <h2 class="font-display text-3xl sm:text-4xl font-bold mb-2">Your Wishlist</h2>
-                <p class="text-sm opacity-50 tracking-wider">Items you've saved for later</p>
-            </div>
-            <div id="favGrid" class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"></div>
-        </div>
-    </section><!-- Footer -->
-    <footer class="bg-black text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-                <div>
-                    <h3 class="font-display text-xl font-bold mb-4" id="footerLogo">
-                        <img src="pic/logo2.png" alt="logo" style="height:40px;">
-                    </h3>
-                    <p class="text-xs opacity-50 leading-relaxed">Contemporary fashion for the modern individual. Crafted with intention.</p>
-                </div>
-                <div>
-                    <h4 class="text-xs tracking-widest uppercase mb-4 opacity-70">Shop</h4>
-                    <div class="flex flex-col gap-2 text-xs opacity-40"><a href="#" class="hover:opacity-100 transition">New Arrivals</a> <a href="#" class="hover:opacity-100 transition">Bestsellers</a> <a href="#" class="hover:opacity-100 transition">Sale</a>
+
+<body>
+
+<div id="app-wrapper" class="w-full min-h-screen overflow-auto">
+
+    <header class="w-full fixed top-0 left-0 z-50" style="background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,.08);">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.php?lang=<?= h($lang) ?>" class="flex items-center">
+                <img src="pic/lolo1.png" alt="Demoiselle Logo" id="logo-img">
+            </a>
+
+            <nav class="hidden md:flex items-center gap-8 text-sm tracking-wider uppercase font-light" style="color:rgba(255,255,255,.7);">
+                <a href="index.php?lang=<?= h($lang) ?>" class="nav-link">Home</a>
+                <a href="shope.php?lang=<?= h($lang) ?>" class="nav-link">Shop</a>
+                <a href="newcolc.php?lang=<?= h($lang) ?>" class="nav-link">Collection</a>
+                <a href="about.php?lang=<?= h($lang) ?>" class="nav-link">Our Story</a>
+                <a href="contact.php?lang=<?= h($lang) ?>" class="nav-link">Contact</a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4 relative text-white">
+                <button id="main-dropdown-btn">
+                    <i data-lucide="menu" style="width:24px;height:24px;"></i>
+                </button>
+
+                <div id="main-dropdown" class="hidden absolute top-10 right-0 w-96 max-h-[80vh] overflow-y-auto bg-black border border-white/10 rounded-2xl p-6 shadow-2xl z-[200]">
+                    <h4 class="text-xs tracking-[.3em] uppercase text-white/40 mb-3">Pages</h4>
+
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <a class="dropdown-link" href="index.php?lang=<?= h($lang) ?>">Home</a>
+                        <a class="dropdown-link" href="shope.php?lang=<?= h($lang) ?>">Shop</a>
+                        <a class="dropdown-link" href="newcolc.php?lang=<?= h($lang) ?>">New Collection</a>
+                        <a class="dropdown-link" href="search.php?lang=<?= h($lang) ?>">Search</a>
+                        <a class="dropdown-link" href="cart.php?lang=<?= h($lang) ?>">Cart</a>
+                        <a class="dropdown-link" href="wishlist.php?lang=<?= h($lang) ?>">Wishlist</a>
+                        <a class="dropdown-link" href="profile.php?lang=<?= h($lang) ?>">Profile</a>
+                        <a class="dropdown-link" href="logout.php">Logout</a>
                     </div>
                 </div>
+
+                <button onclick="location.href='search.php?lang=<?= h($lang) ?>'">
+                    <i data-lucide="search" style="width:18px;height:18px;"></i>
+                </button>
+
+                <button onclick="goUserPage()">
+                    <i data-lucide="user" style="width:18px;height:18px;"></i>
+                </button>
+
+                <button onclick="location.href='wishlist.php?lang=<?= h($lang) ?>'" class="relative">
+                    <i data-lucide="heart" style="width:18px;height:18px;"></i>
+                    <span id="fav-count" class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black <?= count($wishlistIds) > 0 ? '' : 'hidden' ?>">
+                        <?= count($wishlistIds) ?>
+                    </span>
+                </button>
+
+                <button onclick="location.href='cart.php?lang=<?= h($lang) ?>'" id="bag-btn" class="relative">
+                    <i data-lucide="shopping-bag" style="width:18px;height:18px;"></i>
+                    <span id="cart-count" class="absolute -top-1 -right-2 text-[10px] w-4 h-4 rounded-full flex items-center justify-center bg-white text-black hidden">0</span>
+                </button>
+
+                <?php if ($isLoggedIn): ?>
+                    <span class="text-xs text-white/60"><?= h($currentUserName) ?></span>
+                <?php endif; ?>
+            </div>
+
+            <button class="md:hidden text-white" id="mobile-toggle">
+                <i data-lucide="menu" style="width:24px;height:24px;"></i>
+            </button>
+        </div>
+
+        <div class="mobile-menu md:hidden px-6 pb-4 text-white/70" id="mobile-menu">
+            <nav class="flex flex-col gap-4 text-sm tracking-wider uppercase font-light pt-2 border-t border-white/10">
+                <a href="index.php?lang=<?= h($lang) ?>">Home</a>
+                <a href="shope.php?lang=<?= h($lang) ?>">Shop</a>
+                <a href="wishlist.php?lang=<?= h($lang) ?>">Wishlist</a>
+                <a href="cart.php?lang=<?= h($lang) ?>">Cart</a>
+                <button onclick="goUserPage()" class="text-left">User / Sign In</button>
+            </nav>
+        </div>
+    </header>
+
+    <div style="height:94px;"></div>
+
+    <section class="w-full relative overflow-hidden anim-fade" style="background:#000; color:#fff;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-16 sm:py-24 flex flex-col items-center text-center">
+            <p class="text-xs tracking-widest uppercase mb-4" style="color:#888;">Autumn / Winter 2024</p>
+            <h1 class="font-display text-4xl sm:text-6xl lg:text-7xl font-light italic leading-tight">Redefine Your Silence</h1>
+            <p class="mt-6 text-sm tracking-wide" style="color:#999; max-width:420px;">
+                Where minimalism speaks volumes. Curated pieces for the unapologetically intentional.
+            </p>
+        </div>
+    </section>
+
+    <div class="w-full overflow-hidden py-3" style="background:#000; border-bottom:1px solid #222;">
+        <div class="marquee-track text-xs tracking-widest uppercase" style="color:#666;">
+            <span class="mx-8">Free Shipping Over $150</span><span class="mx-8">◆</span>
+            <span class="mx-8">New Collection Available</span><span class="mx-8">◆</span>
+            <span class="mx-8">Sustainable Materials</span><span class="mx-8">◆</span>
+            <span class="mx-8">Free Shipping Over $150</span><span class="mx-8">◆</span>
+            <span class="mx-8">New Collection Available</span><span class="mx-8">◆</span>
+        </div>
+    </div>
+
+    <section class="w-full max-w-7xl mx-auto px-4 sm:px-8 pt-12 pb-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+                <p class="text-xs tracking-widest uppercase" style="color:#999;">Curated Selection</p>
+                <h2 class="font-display text-3xl sm:text-4xl font-light mt-1">THE EDIT — AW24</h2>
+            </div>
+
+            <div class="flex gap-3 items-center">
+                <p id="product-count-label" class="text-xs tracking-wide" style="color:#888;">Showing <?= count($products) ?> pieces</p>
+
+                <button onclick="openFilter()" class="px-5 py-2 text-xs tracking-widest uppercase border border-black rounded-full hover:bg-black hover:text-white transition">
+                    Filter
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="w-full max-w-7xl mx-auto px-4 sm:px-8 pb-16">
+        <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"></div>
+    </section>
+
+    <div id="filterOverlay" class="filter-overlay" onclick="closeFilter()"></div>
+
+    <aside id="filterDrawer" class="filter-drawer p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="font-display text-3xl">Filters</h3>
+            <button onclick="closeFilter()"><i data-lucide="x"></i></button>
+        </div>
+
+        <input id="searchInput" oninput="applyFilters()" placeholder="Search by name..."
+               class="w-full border border-zinc-200 rounded-xl px-4 py-3 mb-5 outline-none">
+
+        <div class="mb-6">
+            <h4 class="text-xs tracking-widest uppercase mb-3">Category</h4>
+            <div class="space-y-2">
+                <?php foreach ($categories as $cat): ?>
+                    <label class="check-box">
+                        <input type="checkbox" class="filter-category" value="<?= h(strtolower($cat)) ?>" onchange="applyFilters()">
+                        <?= h($cat) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-xs tracking-widest uppercase mb-3">Collection</h4>
+            <div class="space-y-2">
+                <?php foreach ($collections as $col): ?>
+                    <label class="check-box">
+                        <input type="checkbox" class="filter-collection" value="<?= h(strtolower($col)) ?>" onchange="applyFilters()">
+                        <?= h($col) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-xs tracking-widest uppercase mb-3">Colors</h4>
+            <div class="grid grid-cols-2 gap-2">
+                <?php foreach ($colors as $c): ?>
+                    <label class="check-box">
+                        <input type="checkbox" class="filter-color" value="<?= h(strtolower($c['name'])) ?>" onchange="applyFilters()">
+                        <span class="color-dot" style="background:<?= h($c['css']) ?>"></span>
+                        <?= h($c['name']) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-xs tracking-widest uppercase mb-3">Sizes</h4>
+            <div class="grid grid-cols-3 gap-2">
+                <?php foreach ($sizes as $s): ?>
+                    <label class="check-box justify-center">
+                        <input type="checkbox" class="filter-size" value="<?= h(strtolower($s)) ?>" onchange="applyFilters()">
+                        <?= h($s) ?>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <h4 class="text-xs tracking-widest uppercase mb-3">Price</h4>
+            <div class="grid grid-cols-2 gap-2">
+                <input id="minPrice" type="number" placeholder="Min" oninput="applyFilters()" class="border rounded-xl px-3 py-2">
+                <input id="maxPrice" type="number" placeholder="Max" oninput="applyFilters()" class="border rounded-xl px-3 py-2">
+            </div>
+        </div>
+
+        <button onclick="resetFilters()" class="w-full py-3 bg-black text-white rounded-xl text-xs tracking-widest uppercase">
+            Reset Filters
+        </button>
+    </aside>
+
+    <div id="bag-overlay" class="bag-overlay fixed inset-0 z-50 bg-black/50" onclick="closeBag()"></div>
+
+    <div id="bag-panel" class="bag-panel fixed top-0 right-0 z-50 h-full w-full sm:w-96 flex flex-col bg-white">
+        <div class="flex items-center justify-between p-6 border-b">
+            <h3 class="font-display text-xl tracking-wide">Your Bag</h3>
+            <button onclick="closeBag()"><i data-lucide="x"></i></button>
+        </div>
+
+        <div id="bag-items" class="flex-1 overflow-auto p-6">
+            <div class="flex flex-col items-center justify-center h-full text-center text-zinc-400">
+                <i data-lucide="shopping-bag" style="width:40px;height:40px;"></i>
+                <p class="mt-3 text-xs">Items added here will be saved in your cart page.</p>
+            </div>
+        </div>
+
+        <div class="p-6 border-t">
+            <button onclick="location.href='cart.php?lang=<?= h($lang) ?>'" class="w-full py-3 text-xs tracking-widest uppercase bg-black text-white">
+                Go To Cart
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full text-xs tracking-wide flex items-center gap-2 bg-black text-white shadow-xl">
+        <i data-lucide="check" style="width:14px;height:14px;"></i>
+        <span id="toast-msg">Added</span>
+    </div>
+
+    <footer class="w-full py-16 px-6" style="background:#000; border-top:1px solid rgba(255,255,255,.06); color:#fff;">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
                 <div>
-                    <h4 class="text-xs tracking-widest uppercase mb-4 opacity-70">Info</h4>
-                    <div class="flex flex-col gap-2 text-xs opacity-40"><a href="#" class="hover:opacity-100 transition">About</a> <a href="#" class="hover:opacity-100 transition">Sustainability</a> <a href="#" class="hover:opacity-100 transition">Careers</a>
-                    </div>
+                    <a href="index.php?lang=<?= h($lang) ?>" class="inline-block mb-4">
+                        <img src="pic/lolo1.png" alt="Demoiselle Logo" class="h-10 w-auto">
+                    </a>
+                    <p class="text-xs font-light leading-relaxed text-white/35">Timeless elegance. Conscious fashion.</p>
                 </div>
+
                 <div>
-                    <h4 class="text-xs tracking-widest uppercase mb-4 opacity-70">Follow</h4>
-                    <div class="flex gap-3"><a href="#" class="w-9 h-9 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition"><i data-lucide="instagram" class="w-4 h-4"></i></a> <a href="#" class="w-9 h-9 border border-white/20 rounded-full flex items-center justify-center hover:bg-white hover:text-black transition"><i data-lucide="twitter" class="w-4 h-4"></i></a>
-                    </div>
+                    <h4 class="text-[10px] tracking-[.3em] uppercase mb-5 text-white/50">Shop</h4>
+                    <nav class="flex flex-col gap-3">
+                        <a href="shope.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Shop</a>
+                        <a href="newcolc.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">New Collection</a>
+                    </nav>
+                </div>
+
+                <div>
+                    <h4 class="text-[10px] tracking-[.3em] uppercase mb-5 text-white/50">Company</h4>
+                    <nav class="flex flex-col gap-3">
+                        <a href="about.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Our Story</a>
+                    </nav>
+                </div>
+
+                <div>
+                    <h4 class="text-[10px] tracking-[.3em] uppercase mb-5 text-white/50">Support</h4>
+                    <nav class="flex flex-col gap-3">
+                        <a href="contact.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Contact Us</a>
+                        <a href="wishlist.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Wishlist</a>
+                    </nav>
                 </div>
             </div>
-            <div class="border-t border-white/10 pt-8 text-center text-[10px] tracking-widest uppercase opacity-30">
-                © 2025 NOIR. All rights reserved.
+
+            <div class="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 border-t border-white/10">
+                <p class="text-[10px] tracking-[.2em] text-white/25">© 2025 demoiselle. All rights reserved.</p>
+                <p class="text-[10px] tracking-[.2em] text-white/25">Made with love in Palestine</p>
             </div>
         </div>
     </footer>
+
 </div>
+
 <script>
-    // Product data with SVG placeholders
-    const products = [
-        { id:1, name:"Oversized Wool Blazer", price:285, category:"outerwear", tag:"New", color:"#1a1a1a", accent:"#e0e0e0" },
-        { id:2, name:"Silk Camisole Top", price:120, category:"tops", tag:"Best", color:"#f5f5f5", accent:"#ccc" },
-        { id:3, name:"Wide Leg Trousers", price:195, category:"bottoms", tag:"", color:"#2a2a2a", accent:"#999" },
-        { id:4, name:"Cashmere Turtleneck", price:240, category:"tops", tag:"New", color:"#0d0d0d", accent:"#666" },
-        { id:5, name:"Midi Wrap Dress", price:310, category:"dresses", tag:"", color:"#e8e8e8", accent:"#bbb" },
-        { id:6, name:"Leather Belt", price:85, category:"accessories", tag:"", color:"#1f1f1f", accent:"#888" },
-        { id:7, name:"Cropped Denim Jacket", price:225, category:"outerwear", tag:"Sale", color:"#d5d5d5", accent:"#aaa" },
-        { id:8, name:"Pleated Midi Skirt", price:165, category:"bottoms", tag:"New", color:"#f0f0f0", accent:"#ddd" },
-        { id:9, name:"Structured Tote Bag", price:195, category:"accessories", tag:"Best", color:"#0a0a0a", accent:"#555" },
-        { id:10, name:"Linen Blend Shirt", price:135, category:"tops", tag:"", color:"#fafafa", accent:"#ccc" },
-        { id:11, name:"Slip Dress", price:275, category:"dresses", tag:"Sale", color:"#151515", accent:"#777" },
-        { id:12, name:"Tailored Coat", price:420, category:"outerwear", tag:"New", color:"#222", accent:"#999" },
-    ];
+    const PRODUCTS = <?= json_encode($products, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    const WISHLIST_IDS = <?= json_encode($wishlistIds) ?>;
+    const isLoggedIn = <?= $isLoggedIn ? 'true' : 'false' ?>;
+    const currentLang = "<?= h($lang) ?>";
 
-    // Generate unique SVG for each product
-    function productSVG(p) {
-        const isLight = parseInt(p.color.replace('#',''), 16) > 0x888888;
-        const textColor = isLight ? '#333' : '#eee';
-        const shapes = [
-            `<rect x="40" y="30" width="120" height="160" rx="4" fill="${p.accent}" opacity="0.3"/>
-     <rect x="55" y="50" width="90" height="120" rx="2" fill="${p.accent}" opacity="0.5"/>
-     <line x1="100" y1="50" x2="100" y2="170" stroke="${textColor}" opacity="0.1" stroke-width="0.5"/>`,
-            `<circle cx="100" cy="100" r="60" fill="${p.accent}" opacity="0.25"/>
-     <circle cx="100" cy="100" r="35" fill="${p.accent}" opacity="0.4"/>
-     <circle cx="100" cy="100" r="12" fill="${textColor}" opacity="0.15"/>`,
-            `<polygon points="100,25 165,175 35,175" fill="${p.accent}" opacity="0.3"/>
-     <polygon points="100,55 145,155 55,155" fill="${p.accent}" opacity="0.2"/>`,
-            `<rect x="25" y="60" width="150" height="100" rx="50" fill="${p.accent}" opacity="0.3"/>
-     <ellipse cx="100" cy="110" rx="45" ry="30" fill="${p.accent}" opacity="0.4"/>`,
-            `<path d="M50,170 Q75,30 100,100 Q125,170 150,40" fill="none" stroke="${p.accent}" stroke-width="3" opacity="0.5"/>
-     <circle cx="75" cy="80" r="20" fill="${p.accent}" opacity="0.2"/>
-     <circle cx="130" cy="120" r="15" fill="${p.accent}" opacity="0.3"/>`,
-            `<rect x="30" y="40" width="60" height="80" rx="3" fill="${p.accent}" opacity="0.35"/>
-     <rect x="110" y="100" width="60" height="80" rx="3" fill="${p.accent}" opacity="0.25"/>
-     <rect x="70" y="70" width="60" height="80" rx="3" fill="${p.accent}" opacity="0.15"/>`,
-        ];
-        const shape = shapes[p.id % shapes.length];
-        return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 220"><rect width="200" height="220" fill="${p.color}"/>${shape}<text x="100" y="205" text-anchor="middle" font-family="serif" font-size="8" fill="${textColor}" opacity="0.4">NOIR</text></svg>`)}`;
+    let selectedOptions = {};
+    let cartCounter = 0;
+
+    function withLang(page) {
+        return page.includes('?') ? page + '&lang=' + currentLang : page + '?lang=' + currentLang;
     }
 
-    let favorites = new Set();
-    let cart = [];
-    let currentFilter = 'all';
-
-    function setFilter(f) {
-        currentFilter = f;
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
-        renderProducts();
+    function goUserPage() {
+        location.href = isLoggedIn ? withLang('profile.php') : withLang('signin.php');
     }
 
-    function renderProducts() {
-        const grid = document.getElementById('productGrid');
-        const filtered = currentFilter === 'all' ? products : products.filter(p => p.category === currentFilter);
-        grid.innerHTML = '';
-        filtered.forEach((p, i) => {
-            const isFav = favorites.has(p.id);
-            const tagColor = p.tag === 'Sale' ? 'bg-black text-white' : p.tag === 'New' ? 'bg-black text-white' : 'bg-black/80 text-white';
-            const card = document.createElement('div');
-            card.className = `product-card group cursor-pointer anim-fade-up`;
-            card.style.animationDelay = `${i * 0.08}s`;
-            card.innerHTML = `
-      <div class="relative overflow-hidden rounded-lg mb-3 aspect-[3/4] bg-gray-100">
-        <img src="${productSVG(p)}" alt="${p.name}" class="product-img w-full h-full object-cover" loading="lazy">
-        <div class="product-overlay absolute inset-0 bg-black/10"></div>
-        ${p.tag ? `<span class="absolute top-3 left-3 ${tagColor} text-[10px] tracking-widest uppercase px-3 py-1 rounded-full">${p.tag}</span>` : ''}
-        <div class="quick-actions absolute bottom-3 left-3 right-3 flex gap-2">
-          <button onclick="event.stopPropagation();addToCart(${p.id})" class="flex-1 bg-white text-black py-2.5 text-[10px] tracking-widest uppercase rounded-md hover:bg-black hover:text-white transition flex items-center justify-center gap-2">
-            <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Add to Bag
-          </button>
-          <button onclick="event.stopPropagation();toggleFav(${p.id})" class="w-10 bg-white text-black rounded-md hover:bg-black hover:text-white transition flex items-center justify-center ${isFav ? '!bg-black !text-white' : ''}">
-            <i data-lucide="heart" class="w-4 h-4 ${isFav ? 'fill-current' : ''}"></i>
-          </button>
-        </div>
-      </div>
-      <h3 class="text-sm font-medium mb-1 tracking-wide">${p.name}</h3>
-      <p class="text-sm opacity-50">${p.tag === 'Sale' ? `<span class="line-through mr-2">$${p.price}</span><span class="text-black font-medium">$${Math.round(p.price * 0.7)}</span>` : `$${p.price}`}</p>
-    `;
-            grid.appendChild(card);
+    function openFilter() {
+        document.getElementById('filterDrawer').classList.add('open');
+        document.getElementById('filterOverlay').classList.add('open');
+    }
+
+    function closeFilter() {
+        document.getElementById('filterDrawer').classList.remove('open');
+        document.getElementById('filterOverlay').classList.remove('open');
+    }
+
+    function checkedValues(cls) {
+        return Array.from(document.querySelectorAll('.' + cls + ':checked')).map(x => x.value.toLowerCase());
+    }
+
+    function applyFilters() {
+        const search = document.getElementById('searchInput').value.toLowerCase().trim();
+        const cats = checkedValues('filter-category');
+        const cols = checkedValues('filter-collection');
+        const colors = checkedValues('filter-color');
+        const sizes = checkedValues('filter-size');
+        const min = parseFloat(document.getElementById('minPrice').value || 0);
+        const max = parseFloat(document.getElementById('maxPrice').value || 999999);
+
+        const filtered = PRODUCTS.filter(p => {
+            const nameOk = p.name.toLowerCase().includes(search);
+            const catOk = cats.length === 0 || cats.includes(String(p.category).toLowerCase());
+            const colOk = cols.length === 0 || cols.includes(String(p.collection).toLowerCase());
+            const priceOk = parseFloat(p.price) >= min && parseFloat(p.price) <= max;
+            const colorOk = colors.length === 0 || Object.keys(p.colors || {}).some(c => colors.includes(c.toLowerCase()));
+            const sizeOk = sizes.length === 0 || Object.keys(p.sizes || {}).some(s => sizes.includes(String(s).toLowerCase()));
+
+            return nameOk && catOk && colOk && priceOk && colorOk && sizeOk;
         });
-        lucide.createIcons();
+
+        renderProducts(filtered);
     }
 
-    function toggleFav(id) {
-        if (favorites.has(id)) favorites.delete(id);
-        else favorites.add(id);
-        updateFavCount();
-        renderProducts();
-        renderFavorites();
-    }
-
-    function updateFavCount() {
-        const el = document.getElementById('favCount');
-        if (favorites.size > 0) { el.textContent = favorites.size; el.classList.remove('hidden'); el.classList.add('cart-badge-pop'); }
-        else el.classList.add('hidden');
-        const sec = document.getElementById('favSection');
-        if (favorites.size > 0) sec.classList.remove('hidden');
-        else sec.classList.add('hidden');
-    }
-
-    function renderFavorites() {
-        const grid = document.getElementById('favGrid');
-        grid.innerHTML = '';
-        products.filter(p => favorites.has(p.id)).forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'product-card group anim-scale-in';
-            card.innerHTML = `
-      <div class="relative overflow-hidden rounded-lg mb-3 aspect-[3/4] bg-gray-100">
-        <img src="${productSVG(p)}" alt="${p.name}" class="product-img w-full h-full object-cover" loading="lazy">
-        <div class="product-overlay absolute inset-0 bg-black/10"></div>
-        <div class="quick-actions absolute bottom-3 left-3 right-3 flex gap-2">
-          <button onclick="addToCart(${p.id})" class="flex-1 bg-white text-black py-2.5 text-[10px] tracking-widest uppercase rounded-md hover:bg-black hover:text-white transition flex items-center justify-center gap-2">
-            <i data-lucide="shopping-bag" class="w-3.5 h-3.5"></i> Add to Bag
-          </button>
-          <button onclick="toggleFav(${p.id})" class="w-10 bg-black text-white rounded-md flex items-center justify-center">
-            <i data-lucide="x" class="w-4 h-4"></i>
-          </button>
-        </div>
-      </div>
-      <h3 class="text-sm font-medium mb-1 tracking-wide">${p.name}</h3>
-      <p class="text-sm opacity-50">$${p.price}</p>
-    `;
-            grid.appendChild(card);
+    function resetFilters() {
+        document.querySelectorAll('#filterDrawer input').forEach(i => {
+            if (i.type === 'checkbox') i.checked = false;
+            else i.value = '';
         });
-        lucide.createIcons();
+
+        renderProducts(PRODUCTS);
     }
 
-    function addToCart(id) {
-        const p = products.find(x => x.id === id);
-        const existing = cart.find(x => x.id === id);
-        if (existing) existing.qty++;
-        else cart.push({ ...p, qty: 1 });
-        updateCartCount();
-        renderCart();
-        showToast(`${p.name} added to bag`);
+    function firstImage(p) {
+        const colors = Object.values(p.colors || {});
+        return colors.length ? colors[0].image : p.main_image;
     }
 
-    function removeFromCart(id) {
-        cart = cart.filter(x => x.id !== id);
-        updateCartCount();
-        renderCart();
+    function safeKey(value) {
+        return String(value).replaceAll(' ', '_').replaceAll('/', '_').replaceAll('#', '');
     }
 
-    function updateCartCount() {
-        const el = document.getElementById('cartCount');
-        const total = cart.reduce((s, c) => s + c.qty, 0);
-        if (total > 0) { el.textContent = total; el.classList.remove('hidden'); el.classList.add('cart-badge-pop'); }
-        else el.classList.add('hidden');
+    function findVariant(productId) {
+        const p = PRODUCTS.find(x => parseInt(x.id) === parseInt(productId));
+        if (!p) return null;
+
+        const opt = selectedOptions[productId] || {};
+        if (!opt.color || !opt.size) return null;
+
+        return p.variants.find(v =>
+            String(v.color).toLowerCase() === String(opt.color).toLowerCase() &&
+            String(v.size).toLowerCase() === String(opt.size).toLowerCase() &&
+            parseInt(v.quantity) > 0
+        );
     }
 
-    function renderCart() {
-        const container = document.getElementById('cartItems');
-        const footer = document.getElementById('cartFooter');
-        if (cart.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full opacity-40">
-      <i data-lucide="shopping-bag" class="w-12 h-12 mb-4"></i>
-      <p class="text-sm tracking-wider">Your bag is empty</p>
-    </div>`;
-            footer.classList.add('hidden');
-            lucide.createIcons();
+    function selectColor(productId, color, image) {
+        const img = document.getElementById('img-' + productId);
+        if (img) img.src = image;
+
+        document.querySelectorAll('.color-btn-' + productId).forEach(b => {
+            b.classList.remove('ring-2', 'ring-black');
+        });
+
+        event.currentTarget.classList.add('ring-2', 'ring-black');
+
+        selectedOptions[productId] = selectedOptions[productId] || {};
+        selectedOptions[productId].color = color;
+
+        const variant = findVariant(productId);
+        if (variant) selectedOptions[productId].variant_id = variant.variant_id;
+    }
+
+    function selectSize(productId, size) {
+        document.querySelectorAll('.size-btn-' + productId).forEach(b => {
+            b.classList.remove('active');
+        });
+
+        event.currentTarget.classList.add('active');
+
+        selectedOptions[productId] = selectedOptions[productId] || {};
+        selectedOptions[productId].size = size;
+
+        const variant = findVariant(productId);
+        if (variant) {
+            selectedOptions[productId].variant_id = variant.variant_id;
+        } else {
+            selectedOptions[productId].variant_id = null;
+        }
+    }
+
+    function addToCart(productId) {
+        if (!isLoggedIn) {
+            location.href = withLang('signin.php');
             return;
         }
-        footer.classList.remove('hidden');
-        container.innerHTML = cart.map(item => {
-            const actualPrice = item.tag === 'Sale' ? Math.round(item.price * 0.7) : item.price;
-            return `<div class="flex gap-4 mb-6 pb-6 border-b border-black/5">
-      <div class="w-20 h-24 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-        <img src="${productSVG(item)}" alt="${item.name}" class="w-full h-full object-cover" loading="lazy">
-      </div>
-      <div class="flex-1 min-w-0">
-        <h4 class="text-sm font-medium mb-1 truncate">${item.name}</h4>
-        <p class="text-sm opacity-50 mb-2">$${actualPrice}</p>
-        <div class="flex items-center gap-3">
-          <button onclick="changeQty(${item.id},-1)" class="w-7 h-7 border border-black/20 rounded-full flex items-center justify-center text-xs hover:bg-black hover:text-white transition">−</button>
-          <span class="text-sm w-4 text-center">${item.qty}</span>
-          <button onclick="changeQty(${item.id},1)" class="w-7 h-7 border border-black/20 rounded-full flex items-center justify-center text-xs hover:bg-black hover:text-white transition">+</button>
-          <button onclick="removeFromCart(${item.id})" class="ml-auto p-1 opacity-40 hover:opacity-100 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-      </div>
-    </div>`;
-        }).join('');
-        const total = cart.reduce((s, c) => s + c.qty * (c.tag === 'Sale' ? Math.round(c.price * 0.7) : c.price), 0);
-        document.getElementById('cartTotal').textContent = `$${total}`;
+
+        const opt = selectedOptions[productId] || {};
+
+        if (!opt.color || !opt.size) {
+            showToast('Choose color and size first');
+            return;
+        }
+
+        if (!opt.variant_id) {
+            showToast('This color/size is sold out');
+            return;
+        }
+
+        const body = new URLSearchParams();
+        body.append('variant_id', opt.variant_id);
+
+        fetch('add_to_cart.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: body.toString()
+        })
+            .then(r => r.text())
+            .then(text => {
+                let data;
+
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    alert('في خطأ داخل add_to_cart.php: ' + text);
+                    return;
+                }
+
+                if (data.status === 'login') {
+                    location.href = withLang('signin.php');
+                } else if (data.status === 'added') {
+                    let count = document.getElementById('cart-count');
+                    let n = parseInt(count.textContent || '0');
+                    n++;
+
+                    count.textContent = n;
+                    count.classList.remove('hidden');
+
+                    showToast('Added to bag ✓');
+                } else {
+                    showToast(data.message || 'Cart error');
+                }
+            });
+    }
+
+
+    function renderProducts(items) {
+        const grid = document.getElementById('product-grid');
+        grid.innerHTML = '';
+
+        document.getElementById('product-count-label').textContent =
+            `Showing ${items.length} piece${items.length !== 1 ? 's' : ''}`;
+
+        items.forEach(p => {
+            const liked = WISHLIST_IDS.includes(parseInt(p.id));
+            const colors = Object.values(p.colors || {});
+            const sizes = Object.values(p.sizes || {});
+
+            const card = document.createElement('div');
+            card.className = 'product-card';
+
+            card.innerHTML = `
+                <div class="relative overflow-hidden rounded-sm bg-zinc-100" style="aspect-ratio:3/4;">
+                    <img id="img-${p.id}" src="${firstImage(p)}" class="product-img w-full h-full object-cover" alt="${p.name}">
+
+                    ${parseInt(p.is_new) === 1 ? `<div class="new-ribbon">NEW</div>` : ''}
+
+                    <span class="absolute top-3 left-3 px-2 py-1 uppercase font-medium text-[9px] tracking-widest bg-black text-white z-10">
+                        ${colors.length} Color${colors.length !== 1 ? 's' : ''}
+                    </span>
+
+                    <button class="heart-btn ${liked ? 'liked' : ''} absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center bg-white/90 z-30"
+                            onclick="toggleWishlist(${p.id}, this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="${liked ? '#000' : 'none'}" stroke="#000" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+                        </svg>
+                    </button>
+
+                    <div class="quick-actions absolute bottom-3 left-3 right-3 z-30">
+                        <button onclick="addToCart(${p.id})" class="w-full py-2.5 text-xs tracking-widest uppercase rounded-sm bg-black text-white">
+                            Add to Bag
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-3 px-0.5">
+                    <h3 class="text-sm font-light">${p.name}</h3>
+                    <p class="text-xs mt-1 text-zinc-500">$${p.price}</p>
+                    <p class="text-[11px] mt-1 text-zinc-400">${p.category} · ${p.collection}</p>
+
+                    <div class="flex gap-2 mt-3 flex-wrap">
+                       ${colors.map(c => `
+    <button
+        class="color-btn-${p.id} w-7 h-7 rounded-full border border-zinc-300"
+        style="background:${c.css}"
+        onclick="selectColor(${p.id}, '${c.name}', '${c.image}')">
+    </button>
+`).join('')}
+                    </div>
+
+                    <div class="flex gap-2 mt-3 flex-wrap">
+                      ${sizes.map(s => `
+    <button id="size-${p.id}-${String(s).replaceAll(' ','_')}"
+            onclick="selectSize(${p.id}, '${s}')"
+            class="size-btn size-btn-${p.id} px-3 py-1 border border-zinc-300 rounded-full text-xs">
+        ${s}
+    </button>
+`).join('')}
+                    </div>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+
         lucide.createIcons();
     }
 
-    function changeQty(id, delta) {
-        const item = cart.find(x => x.id === id);
-        if (!item) return;
-        item.qty += delta;
-        if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
-        updateCartCount();
-        renderCart();
+
+
+    function updateCartBadge() {
+        const el = document.getElementById('cart-count');
+        el.textContent = cartCounter;
+        el.classList.toggle('hidden', cartCounter === 0);
     }
 
-    function toggleCart() {
-        const overlay = document.getElementById('cartOverlay');
-        const panel = document.getElementById('cartPanel');
-        const isOpen = !overlay.classList.contains('hidden');
-        if (isOpen) {
-            panel.style.transform = 'translateX(100%)';
-            setTimeout(() => overlay.classList.add('hidden'), 400);
-        } else {
-            overlay.classList.remove('hidden');
-            requestAnimationFrame(() => panel.style.transform = 'translateX(0)');
-            renderCart();
+    function toggleWishlist(id, btn) {
+        if (!isLoggedIn) {
+            location.href = withLang('signin.php');
+            return;
         }
+
+        fetch('toggle_wishlist.php', {
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:'product_id=' + encodeURIComponent(id)
+        })
+            .then(r => r.text())
+            .then(text => {
+                let data;
+
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    alert('في خطأ داخل toggle_wishlist.php: ' + text);
+                    return;
+                }
+
+                const count = document.getElementById('fav-count');
+                let n = parseInt(count.textContent || '0');
+
+                if (data.status === 'added') {
+                    btn.classList.add('liked');
+                    btn.querySelector('svg').setAttribute('fill','#000');
+                    n++;
+                    showToast('Added to wishlist ✓');
+                } else if (data.status === 'removed') {
+                    btn.classList.remove('liked');
+                    btn.querySelector('svg').setAttribute('fill','none');
+                    n = Math.max(0, n - 1);
+                    showToast('Removed from wishlist');
+                } else if (data.status === 'login') {
+                    location.href = withLang('signin.php');
+                } else {
+                    showToast(data.message || 'Wishlist error');
+                }
+
+                count.textContent = n;
+                count.classList.toggle('hidden', n === 0);
+            });
     }
 
-    function scrollToFavs() {
-        const sec = document.getElementById('favSection');
-        if (!sec.classList.contains('hidden')) sec.scrollIntoView({ behavior: 'smooth' });
+    function openBag() {
+        document.getElementById('bag-panel').classList.add('open');
+        document.getElementById('bag-overlay').classList.add('open');
+    }
+
+    function closeBag() {
+        document.getElementById('bag-panel').classList.remove('open');
+        document.getElementById('bag-overlay').classList.remove('open');
     }
 
     function showToast(msg) {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'toast-msg bg-black text-white px-5 py-3 rounded-lg text-xs tracking-wider shadow-xl flex items-center gap-2';
-        toast.style.pointerEvents = 'auto';
-        toast.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> ${msg}`;
-        container.appendChild(toast);
-        lucide.createIcons();
-        setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 2500);
+        const t = document.getElementById('toast');
+        document.getElementById('toast-msg').textContent = msg;
+        t.classList.add('show');
+
+        setTimeout(() => t.classList.remove('show'), 2200);
     }
 
-    // Element SDK
-    const defaultConfig = {
-        background_color: '#ffffff',
-        surface_color: '#000000',
-        text_color: '#000000',
-        primary_action_color: '#000000',
-        secondary_action_color: '#666666',
-        font_family: 'Outfit',
-        font_size: 14,
-        brand_name: 'NOIR',
-        hero_heading: 'NEW COLLECTION',
-        hero_subtext: 'Autumn / Winter 2025',
-    };
 
-    function applyConfig(config) {
-        const bg = config.background_color || defaultConfig.background_color;
-        const surface = config.surface_color || defaultConfig.surface_color;
-        const text = config.text_color || defaultConfig.text_color;
-        const primary = config.primary_action_color || defaultConfig.primary_action_color;
-        const font = config.font_family || defaultConfig.font_family;
-        const size = config.font_size || defaultConfig.font_size;
 
-        const root = document.getElementById('appRoot');
-        root.style.backgroundColor = bg;
-        root.style.color = text;
-        root.style.fontFamily = `${font}, Outfit, sans-serif`;
-        root.style.fontSize = `${size}px`;
+    document.getElementById('main-dropdown-btn')?.addEventListener('click', e => {
+        e.stopPropagation();
+        document.getElementById('main-dropdown').classList.toggle('hidden');
+    });
 
-        document.getElementById('logoText').textContent = config.brand_name || defaultConfig.brand_name;
-        document.getElementById('footerLogo').textContent = config.brand_name || defaultConfig.brand_name;
-        document.getElementById('heroHeading').innerHTML = (config.hero_heading || defaultConfig.hero_heading).replace(' ', '<br>');
-        document.getElementById('heroSubtext').textContent = config.hero_subtext || defaultConfig.hero_subtext;
+    document.getElementById('main-dropdown')?.addEventListener('click', e => e.stopPropagation());
 
-        document.querySelectorAll('.font-display').forEach(el => el.style.fontFamily = `Playfair Display, ${font}, serif`);
-    }
+    document.addEventListener('click', () => {
+        document.getElementById('main-dropdown')?.classList.add('hidden');
+    });
 
-    if (window.elementSdk) {
-        window.elementSdk.init({
-            defaultConfig,
-            onConfigChange: async (config) => applyConfig(config),
-            mapToCapabilities: (config) => ({
-                recolorables: [
-                    { get: () => config.background_color || defaultConfig.background_color, set: v => { config.background_color = v; window.elementSdk.setConfig({ background_color: v }); }},
-                    { get: () => config.surface_color || defaultConfig.surface_color, set: v => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); }},
-                    { get: () => config.text_color || defaultConfig.text_color, set: v => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); }},
-                    { get: () => config.primary_action_color || defaultConfig.primary_action_color, set: v => { config.primary_action_color = v; window.elementSdk.setConfig({ primary_action_color: v }); }},
-                    { get: () => config.secondary_action_color || defaultConfig.secondary_action_color, set: v => { config.secondary_action_color = v; window.elementSdk.setConfig({ secondary_action_color: v }); }},
-                ],
-                borderables: [],
-                fontEditable: {
-                    get: () => config.font_family || defaultConfig.font_family,
-                    set: v => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); }
-                },
-                fontSizeable: {
-                    get: () => config.font_size || defaultConfig.font_size,
-                    set: v => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); }
-                }
-            }),
-            mapToEditPanelValues: (config) => new Map([
-                ['brand_name', config.brand_name || defaultConfig.brand_name],
-                ['hero_heading', config.hero_heading || defaultConfig.hero_heading],
-                ['hero_subtext', config.hero_subtext || defaultConfig.hero_subtext],
-            ])
-        });
-    }
+    document.getElementById('mobile-toggle')?.addEventListener('click', () => {
+        document.getElementById('mobile-menu').classList.toggle('open');
+    });
 
-    // Init
-    renderProducts();
+    renderProducts(PRODUCTS);
     lucide.createIcons();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9eee0e6c9510146b',t:'MTc3NjYyNDIyMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</body>
 </html>
