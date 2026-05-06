@@ -3,13 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>
-        <?php
-        if($lang == 'ar') echo "DEMOISELLE";
-        elseif($lang == 'he') echo "DEMOISELLE";
-        else echo "DEMOISELLE";
-        ?>
-    </title>
+    <title>NOIR ATELIER - Product Page</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
