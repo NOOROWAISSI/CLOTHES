@@ -309,31 +309,77 @@ $total = $subtotal + $shipping;
                 <h4 class="text-xs tracking-[0.3em] uppercase text-white/40 mb-3"><?= h($t['categories']) ?></h4>
 
                 <div class="grid grid-cols-2 gap-3 text-sm mb-6">
-                    <?php if ($categories_result && $categories_result->num_rows > 0): ?>
-                        <?php while($cat = $categories_result->fetch_assoc()): ?>
-                            <a class="dropdown-link" href="<?= h($cat['category_key']) ?>.php?lang=<?= h($lang) ?>">
-                                <?= h($cat['category_name']) ?>
-                            </a>
-                        <?php endwhile; ?>
-                    <?php endif; ?>
+                    <?php
+                    $menuCats = [
+                            'jeans' => 'Jeans',
+                            'pants' => 'Pants',
+                            'blouses' => 'Blouses',
+                            'shirts' => 'Shirts',
+                            'dresses' => 'Dresses',
+                            'formal' => 'Formal',
+                            'jackets' => 'Jackets',
+                            'abaya' => 'Abaya',
+                            'skirts' => 'Skirts',
+                            'bags' => 'Bags',
+                            'belts' => 'Belts',
+                            'vests' => 'Vests',
+                            'overalls' => 'Overalls',
+                            'outfits' => 'Outfits',
+                            'casual' => 'Casual',
+                            'blazers' => 'Blazers'
+                    ];
+
+                    foreach ($menuCats as $key => $value):
+                        ?>
+                        <a class="dropdown-link"
+                           href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&category=<?= urlencode($key) ?>">
+                            <?= htmlspecialchars($value) ?>
+                        </a>
+                    <?php endforeach; ?>
                 </div>
 
                 <h4 class="text-xs tracking-[0.3em] uppercase text-white/40 mb-3"><?= h($t['pages']) ?></h4>
 
                 <div class="grid grid-cols-2 gap-3 text-sm">
-                    <a class="dropdown-link" href="index.php?lang=<?= h($lang) ?>"><?= h($t['home']) ?></a>
-                    <a class="dropdown-link" href="new_collection.php?lang=<?= h($lang) ?>"><?= h($t['new_collection']) ?></a>
-                    <a class="dropdown-link" href="shope.php?lang=<?= h($lang) ?>"><?= h($t['shop']) ?></a>
-                    <a class="dropdown-link" href="search.php?lang=<?= h($lang) ?>"><?= h($t['search']) ?></a>
-                    <a class="dropdown-link" href="cart.php?lang=<?= h($lang) ?>"><?= h($t['cart']) ?></a>
-                    <a class="dropdown-link" href="wishlist.php?lang=<?= h($lang) ?>"><?= h($t['wishlist']) ?></a>
-                    <a class="dropdown-link" href="order.php?lang=<?= h($lang) ?>"><?= h($t['order']) ?></a>
-                    <a class="dropdown-link" href="profile.php?lang=<?= h($lang) ?>"><?= h($t['profile']) ?></a>
-                    <a class="dropdown-link" href="contact.php?lang=<?= h($lang) ?>"><?= h($t['contact']) ?></a>
-                    <a class="dropdown-link" href="about.php?lang=<?= h($lang) ?>"><?= h($t['about']) ?></a>
-                    <a class="dropdown-link" href="signin.php?lang=<?= h($lang) ?>"><?= h($t['sign_in']) ?></a>
-                    <a class="dropdown-link" href="signup.php?lang=<?= h($lang) ?>"><?= h($t['sign_up']) ?></a>
-                    <a class="dropdown-link" href="logout.php"><?= h($t['logout']) ?></a>
+                    <a class="dropdown-link" href="index.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['home'] ?></a>
+
+                    <a class="dropdown-link" href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>">
+                        <?= $t['shop'] ?>
+                    </a>
+
+                    <a class="dropdown-link" href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&new=1">
+                        <?= $t['new_collection'] ?>
+                    </a>
+
+                    <a class="dropdown-link" href="cart.php?lang=<?= htmlspecialchars($lang) ?>">
+                        <?= $t['cart'] ?>
+                    </a>
+
+                    <a class="dropdown-link" href="wishlist.php?lang=<?= htmlspecialchars($lang) ?>">
+                        <?= $t['wishlist'] ?>
+                    </a>
+
+                    <a class="dropdown-link" href="order.php?lang=<?= htmlspecialchars($lang) ?>">
+                        <?= $t['order'] ?>
+                    </a>
+
+                    <a class="dropdown-link" href="profile.php?lang=<?= htmlspecialchars($lang) ?>">
+                        <?= $t['profile'] ?>
+                    </a>
+
+                    <?php if ($isLoggedIn): ?>
+                        <a class="dropdown-link" href="logout.php">
+                            <?= $t['logout'] ?>
+                        </a>
+                    <?php else: ?>
+                        <a class="dropdown-link" href="signin.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['sign_in'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="signup.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['sign_up'] ?>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
 

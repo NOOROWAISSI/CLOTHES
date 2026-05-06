@@ -736,14 +736,30 @@ function langUrl($newLang) {
                     <div class="grid grid-cols-2 gap-3 text-sm mb-6">
                         <?php
                         $menuCats = [
-                                'jeans' => 'Jeans', 'pants' => 'Pants', 'blouses' => 'Blouses', 'shirts' => 'Shirts',
-                                'dresses' => 'Dresses', 'formal' => 'Formal', 'jackets' => 'Jackets', 'abaya' => 'Abaya',
-                                'skirts' => 'Skirts', 'bags' => 'Bags', 'belts' => 'Belts', 'vests' => 'Vests',
-                                'overalls' => 'Overalls', 'outfits' => 'Outfits', 'casual' => 'Casual', 'blazers' => 'Blazers'
+                                'jeans' => 'Jeans',
+                                'pants' => 'Pants',
+                                'blouses' => 'Blouses',
+                                'shirts' => 'Shirts',
+                                'dresses' => 'Dresses',
+                                'formal' => 'Formal',
+                                'jackets' => 'Jackets',
+                                'abaya' => 'Abaya',
+                                'skirts' => 'Skirts',
+                                'bags' => 'Bags',
+                                'belts' => 'Belts',
+                                'vests' => 'Vests',
+                                'overalls' => 'Overalls',
+                                'outfits' => 'Outfits',
+                                'casual' => 'Casual',
+                                'blazers' => 'Blazers'
                         ];
+
                         foreach ($menuCats as $key => $value):
                             ?>
-                            <a class="dropdown-link" href="<?= $key ?>.php?lang=<?= htmlspecialchars($lang) ?>"><?= htmlspecialchars($value) ?></a>
+                            <a class="dropdown-link"
+                               href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&category=<?= urlencode($key) ?>">
+                                <?= htmlspecialchars($value) ?>
+                            </a>
                         <?php endforeach; ?>
                     </div>
 
@@ -751,17 +767,44 @@ function langUrl($newLang) {
 
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <a class="dropdown-link" href="index.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['home'] ?></a>
-                        <a class="dropdown-link" href="new_collection.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['new_collection'] ?></a>
-                        <a class="dropdown-link" href="search.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['search'] ?></a>
-                        <a class="dropdown-link" href="cart.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['cart'] ?></a>
-                        <a class="dropdown-link" href="wishlist.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['wishlist'] ?></a>
-                        <a class="dropdown-link" href="order.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['order'] ?></a>
-                        <a class="dropdown-link" href="profile.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['profile'] ?></a>
-                        <a class="dropdown-link" href="contact.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['contact'] ?></a>
-                        <a class="dropdown-link" href="about.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['about'] ?></a>
-                        <a class="dropdown-link" href="signin.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['sign_in'] ?></a>
-                        <a class="dropdown-link" href="signup.php?lang=<?= htmlspecialchars($lang) ?>"><?= $t['sign_up'] ?></a>
-                        <a class="dropdown-link" href="logout.php"><?= $t['logout'] ?></a>
+
+                        <a class="dropdown-link" href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['shop'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&new=1">
+                            <?= $t['new_collection'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="cart.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['cart'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="wishlist.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['wishlist'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="order.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['order'] ?>
+                        </a>
+
+                        <a class="dropdown-link" href="profile.php?lang=<?= htmlspecialchars($lang) ?>">
+                            <?= $t['profile'] ?>
+                        </a>
+
+                        <?php if ($isLoggedIn): ?>
+                            <a class="dropdown-link" href="logout.php">
+                                <?= $t['logout'] ?>
+                            </a>
+                        <?php else: ?>
+                            <a class="dropdown-link" href="signin.php?lang=<?= htmlspecialchars($lang) ?>">
+                                <?= $t['sign_in'] ?>
+                            </a>
+
+                            <a class="dropdown-link" href="signup.php?lang=<?= htmlspecialchars($lang) ?>">
+                                <?= $t['sign_up'] ?>
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
 
@@ -875,10 +918,11 @@ function langUrl($newLang) {
                                 <span class="new-tag">NEW</span>
 
                                 <div class="product-overlay absolute inset-0 flex items-end justify-center pb-6 opacity-0 transition-opacity duration-300" style="background:rgba(0,0,0,0.65);">
-                                    <button onclick="quickAdd(<?= (int)$product['product_id'] ?>)"
+                                    <button type="button"
+                                            onclick="window.location.href='newcolc.php?lang=<?= htmlspecialchars($lang) ?>&new=1'"
                                             class="px-8 py-3 text-[10px] tracking-[0.2em] uppercase transition-all hover:opacity-80"
-                                            style="background:#fff; color:#000;">
-                                        <?= $t['quick_add'] ?>
+                                            style="background:#fff; color:#000; position:relative; z-index:50; cursor:pointer;">
+                                        <?= $t['new_collection'] ?>
                                     </button>
                                 </div>
                             </div>
@@ -916,10 +960,13 @@ function langUrl($newLang) {
                 <div class="cats-track">
                     <?php if ($categories_result->num_rows > 0): ?>
                         <?php while($cat = $categories_result->fetch_assoc()): ?>
-                            <a href="<?= htmlspecialchars($cat['category_key']) ?>.php?lang=<?= htmlspecialchars($lang) ?>" class="cat-card">
+                            <a href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&category=<?= urlencode($cat['category_key']) ?>" class="cat-card">
+
                                 <img src="pic/<?= htmlspecialchars(imgName($cat['category_key'])) ?>"
                                      alt="<?= htmlspecialchars($cat['category_name']) ?>">
+
                                 <span><?= htmlspecialchars($cat['category_name']) ?></span>
+
                             </a>
                         <?php endwhile; ?>
 
@@ -927,10 +974,13 @@ function langUrl($newLang) {
                         $categories_result->data_seek(0);
                         while($cat = $categories_result->fetch_assoc()):
                             ?>
-                            <a href="<?= htmlspecialchars($cat['category_key']) ?>.php?lang=<?= htmlspecialchars($lang) ?>" class="cat-card">
+                            <a href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&category=<?= urlencode($cat['category_key']) ?>" class="cat-card">
+
                                 <img src="pic/<?= htmlspecialchars(imgName($cat['category_key'])) ?>"
                                      alt="<?= htmlspecialchars($cat['category_name']) ?>">
+
                                 <span><?= htmlspecialchars($cat['category_name']) ?></span>
+
                             </a>
                         <?php endwhile; ?>
                     <?php else: ?>
