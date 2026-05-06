@@ -1,4 +1,5 @@
 <?php
+global $conn;
 include 'db.php';
 
 $error = "";
@@ -39,173 +40,605 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 ?>
 
-<!doctype html>
-<html lang="en" class="h-full">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demoiselle — Create Account</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Luxury Sign Up</title>
 
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;400;500;600&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Outfit:wght@200;300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
     <style>
-        html, body { height: 100%; margin: 0; }
-        .font-serif { font-family: 'Cormorant Garamond', serif; }
-        .font-sans { font-family: 'Outfit', sans-serif; }
-
-        .signup-bg {
-            background-image: url('pic/signupback.png');
-            background-size: cover;
-            background-position: center 40%;
-            background-attachment: fixed;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .overlay {
-            background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.75));
+        :root {
+            --black: #000;
+            --white: #fff;
+            --bg: #f7f7f5;
+            --line: #dddddd;
+            --text: #1a1a1a;
+            --muted: #7b7b7b;
+            --error: #c96a6a;
+            --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --header-h: 74px;
         }
 
-        .form-card {
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(16px);
-            border-radius: 24px;
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.3);
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
 
-        .vertical-brand-left {
-            writing-mode: vertical-rl;
-            transform: rotate(180deg);
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* HEADER */
+        .header {
+            height: var(--header-h);
+            background: #000;
+            color: #fff;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            padding: 0 28px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-icon {
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .menu-icon:hover {
+            opacity: 0.7;
+        }
+
+        .logo {
+            justify-self: center;
             font-family: 'Cormorant Garamond', serif;
-            font-size: 42px;
-            letter-spacing: 10px;
-            color: rgba(255,255,255,0.28);
+            font-size: 2rem;
+            letter-spacing: 9px;
+            font-weight: 500;
         }
 
-        .vertical-brand-right {
+        .header-icons {
+            justify-self: end;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-icons a {
+            color: #fff;
+            font-size: 1.1rem;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+
+        .header-icons a:hover {
+            transform: translateY(-2px);
+            opacity: 0.75;
+        }
+
+        .bag-icon {
+            position: relative;
+        }
+
+        .bag-count {
+            position: absolute;
+            top: -7px;
+            right: -8px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            color: #000;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        /* MAIN */
+        .signup-page {
+            height: calc(100vh - var(--header-h));
+            display: grid;
+            grid-template-columns: 1.02fr 1fr;
+        }
+
+        /* LEFT PANEL */
+        .left-panel {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+            background: #ece8e3;
+        }
+
+        .left-panel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            filter: grayscale(100%);
+        }
+
+        .vertical-text {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%) rotate(180deg);
             writing-mode: vertical-rl;
-            transform: rotate(180deg);
+            font-size: 0.78rem;
+            letter-spacing: 6px;
+            color: rgba(0, 0, 0, 0.75);
+            font-weight: 400;
+        }
+
+        .vertical-line {
+            position: absolute;
+            left: 52px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 1px;
+            height: 90px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        /* RIGHT PANEL */
+        .right-panel {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 34px;
+            background: #fbfbfa;
+            overflow: hidden;
+        }
+
+        .form-wrap {
+            width: 100%;
+            max-width: 470px;
+        }
+
+        .form-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 42px;
-            letter-spacing: 10px;
-            color: rgba(255,255,255,0.18);
+            font-size: 2.6rem;
+            letter-spacing: 3px;
+            font-weight: 500;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .form-subtitle {
+            color: var(--muted);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 18px;
+            max-width: 390px;
+        }
+
+        .form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* INPUTS */
+        .input-group {
+            position: relative;
+        }
+
+        .input-group input {
+            width: 100%;
+            height: 54px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: #fff;
+            padding: 20px 42px 8px 46px;
+            font-size: 0.93rem;
+            color: var(--text);
+            outline: none;
+            transition: 0.28s ease;
+            box-shadow: 0 0 0 rgba(0,0,0,0);
+        }
+
+        .input-group input:focus {
+            border-color: #000;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+            transform: translateY(-1px);
+        }
+
+        .input-group label {
+            position: absolute;
+            top: 9px;
+            left: 46px;
+            font-size: 0.64rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #111;
+            font-weight: 600;
+            pointer-events: none;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 17px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #555;
+            font-size: 0.92rem;
+        }
+
+        .eye-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            cursor: pointer;
+            transition: 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .eye-icon:hover {
+            color: #000;
+        }
+
+        .error-text {
+            font-size: 0.82rem;
+            color: var(--error);
+            margin: -2px 0 0 6px;
+        }
+
+        /* CHECKBOX */
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-top: 2px;
+            line-height: 1.5;
+            color: #444;
+            font-size: 0.85rem;
+        }
+
+        .checkbox-row input {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1.4px solid #bbb;
+            border-radius: 5px;
+            margin-top: 1px;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            background: #fff;
+            transition: 0.25s ease;
+        }
+
+        .checkbox-row input:checked {
+            background: #000;
+            border-color: #000;
+        }
+
+        .checkbox-row input:checked::after {
+            content: "✓";
+            position: absolute;
+            color: #fff;
+            font-size: 11px;
+            left: 4px;
+            top: -1px;
+        }
+
+        .checkbox-row a {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+            transition: 0.25s ease;
+        }
+
+        .checkbox-row a:hover {
+            opacity: 0.7;
+        }
+
+        /* BUTTONS */
+        .signup-btn {
+            height: 52px;
+            border: none;
+            border-radius: 14px;
+            background: #000;
+            color: #fff;
+            font-size: 0.9rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s ease;
+            margin-top: 2px;
+            box-shadow: 0 14px 26px rgba(0, 0, 0, 0.12);
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            background: #111;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 2px 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: #d8d8d8;
+        }
+
+        .divider span {
+            font-size: 0.66rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .social-btn {
+            width: 100%;
+            height: 48px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .social-btn:hover {
+            border-color: #000;
+            transform: translateY(-2px);
+        }
+
+        .social-btn.google i {
+            color: #db4437;
+            font-size: 1.05rem;
+        }
+
+        .social-btn.apple i {
+            color: #000;
+            font-size: 1.1rem;
+        }
+
+        .signin-text {
+            text-align: center;
+            margin-top: 4px;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        .signin-text a {
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            transition: 0.25s ease;
+        }
+
+        .signin-text a:hover {
+            opacity: 0.75;
+        }
+
+        /* Laptop fit */
+        @media (max-height: 800px) {
+            .form-title {
+                font-size: 2.3rem;
+            }
+
+            .form-subtitle {
+                margin-bottom: 14px;
+                font-size: 0.9rem;
+            }
+
+            .form {
+                gap: 8px;
+            }
+
+            .input-group input {
+                height: 50px;
+            }
+
+            .signup-btn {
+                height: 48px;
+            }
+
+            .social-btn {
+                height: 44px;
+            }
+
+            .vertical-text,
+            .vertical-line {
+                display: none;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            html, body {
+                overflow: auto;
+            }
+
+            .signup-page {
+                height: auto;
+                min-height: calc(100vh - var(--header-h));
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel {
+                min-height: 280px;
+            }
+
+            .right-panel {
+                padding: 28px 20px 34px;
+            }
+
+            .form-wrap {
+                max-width: 100%;
+            }
+
+            .vertical-text,
+            .vertical-line {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 0 16px;
+            }
+
+            .logo {
+                font-size: 1.45rem;
+                letter-spacing: 5px;
+            }
+
+            .header-icons {
+                gap: 12px;
+            }
+
+            .form-title {
+                font-size: 2rem;
+            }
+
+            .form-subtitle {
+                font-size: 0.88rem;
+            }
         }
     </style>
 </head>
+<body>
 
-<body class="signup-bg font-sans">
-
-<div class="min-h-screen flex items-center justify-center relative overlay">
-
-    <div class="absolute right-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col items-center">
-        <span class="vertical-brand-right">DEMOISELLE</span>
-        <div class="w-px h-24 bg-white/20 mt-4"></div>
+<header class="header">
+    <div class="header-left">
+        <i class="fa-solid fa-bars menu-icon"></i>
     </div>
 
-    <div class="absolute left-10 top-1/2 -translate-y-1/2 z-20 hidden md:flex flex-col items-center">
-        <span class="vertical-brand-left">DEMOISELLE</span>
-        <div class="w-px h-24 bg-white/20 mt-4"></div>
+    <div class="logo">DEMOISELLE</div>
+
+    <div class="header-icons">
+        <a href="#"><i class="fa-solid fa-magnifying-glass"></i></a>
+        <a href="#"><i class="fa-regular fa-user"></i></a>
+        <a href="#" class="bag-icon">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span class="bag-count">0</span>
+        </a>
     </div>
+</header>
 
-    <div class="form-card w-full max-w-md mx-6 p-10">
-        <div class="text-center mb-8">
-            <h1 class="font-serif text-5xl font-light text-black">Create Account</h1>
-            <p class="text-gray-600 mt-3">Join Demoiselle and enjoy timeless elegance</p>
-        </div>
+<main class="signup-page">
+    <section class="left-panel">
+        <!-- حطي الصورة هون -->
+        <img src="pic/signup4.jpg" alt="Luxury Fashion Model">
 
-        <?php if ($error): ?>
-            <p class="text-red-600 text-center mb-5">
-                <?= htmlspecialchars($error) ?>
+        <div class="vertical-text">TIMELESS ELEGANCE &nbsp; NEW COLLECTION</div>
+        <div class="vertical-line"></div>
+    </section>
+
+    <section class="right-panel">
+        <div class="form-wrap">
+            <h1 class="form-title">CREATE ACCOUNT</h1>
+            <p class="form-subtitle">
+                Join Maryam and discover a world of timeless fashion.
             </p>
-        <?php endif; ?>
 
-        <form method="POST" action="signup.php" class="space-y-6">
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">First Name</label>
-                    <input
-                            name="first_name"
-                            type="text"
-                            required
-                            class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg"
-                            placeholder="Sarah"
-                    >
+            <form class="form">
+                <div class="input-group">
+                    <i class="fa-regular fa-user input-icon"></i>
+                    <label>Full Name</label>
+                    <input type="text" placeholder="Enter your full name">
                 </div>
 
-                <div>
-                    <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Last Name</label>
-                    <input
-                            name="last_name"
-                            type="text"
-                            required
-                            class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg"
-                            placeholder="Al-Masri"
-                    >
+                <div class="input-group">
+                    <i class="fa-regular fa-envelope input-icon"></i>
+                    <label>Email Address</label>
+                    <input type="email" placeholder="Enter your email">
                 </div>
-            </div>
 
-            <div>
-                <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Email Address</label>
-                <input
-                        name="email"
-                        type="email"
-                        required
-                        class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg"
-                        placeholder="your@email.com"
-                >
-            </div>
-
-            <div>
-                <label class="block text-xs tracking-widest uppercase mb-2 text-gray-500">Password</label>
-
-                <div class="relative">
-                    <input
-                            name="password"
-                            id="password"
-                            type="password"
-                            required
-                            class="w-full px-5 py-4 border border-gray-300 rounded-2xl focus:border-black focus:outline-none text-lg"
-                            placeholder="••••••••"
-                    >
-
-                    <button type="button" onclick="togglePassword()" class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black">
-                        <i id="eyeIcon" data-lucide="eye" style="width:20px;height:20px"></i>
-                    </button>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <label>Password</label>
+                    <input type="password" placeholder="Enter your password">
+                    <i class="fa-regular fa-eye eye-icon"></i>
                 </div>
-            </div>
 
-            <button type="submit" class="w-full bg-black text-white py-5 rounded-2xl text-sm tracking-widest font-medium hover:bg-gray-900 transition-all">
-                CREATE ACCOUNT
-            </button>
-        </form>
+                <p class="error-text">Password must be at least 8 characters.</p>
 
-        <p class="text-center text-sm text-gray-500 mt-6">
-            Already have an account?
-            <a href="signin.php" class="text-black font-medium hover:underline">Log in</a>
-        </p>
-    </div>
-</div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <label>Confirm Password</label>
+                    <input type="password" placeholder="Confirm your password">
+                    <i class="fa-regular fa-eye eye-icon"></i>
+                </div>
 
-<script>
-    function togglePassword() {
-        const input = document.getElementById("password");
-        const icon = document.getElementById("eyeIcon");
+                <label class="checkbox-row">
+                    <input type="checkbox">
+                    <span>
+              I agree to the <a href="#">Terms & Conditions</a> and
+              <a href="#">Privacy Policy</a>.
+            </span>
+                </label>
 
-        if (input.type === "password") {
-            input.type = "text";
-            icon.setAttribute("data-lucide", "eye-off");
-        } else {
-            input.type = "password";
-            icon.setAttribute("data-lucide", "eye");
-        }
+                <button type="submit" class="signup-btn">Sign Up</button>
 
-        lucide.createIcons();
-    }
+                <div class="divider">
+                    <span>Or sign up with</span>
+                </div>
 
-    lucide.createIcons();
-</script>
+                <button type="button" class="social-btn google">
+                    <i class="fa-brands fa-google"></i>
+                    <span>Continue with Google</span>
+                </button>
+
+                <button type="button" class="social-btn apple">
+                    <i class="fa-brands fa-apple"></i>
+                    <span>Continue with Apple</span>
+                </button>
+
+                <p class="signin-text">
+                    Already have an account? <a href="#">Sign in</a>
+                </p>
+            </form>
+        </div>
+    </section>
+</main>
 
 </body>
 </html>
