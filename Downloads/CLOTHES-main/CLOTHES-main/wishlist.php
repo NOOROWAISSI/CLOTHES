@@ -263,7 +263,7 @@ LIMIT 8
             <nav class="hidden md:flex items-center gap-8">
                 <a href="index.php#collection" class="text-xs tracking-widest uppercase text-gray-300">New In</a>
                 <a href="ORDER_2.php" class="text-xs tracking-widest uppercase text-gray-300">Shop</a>
-                <a href="new collection_2.php" class="text-xs tracking-widest uppercase text-gray-300">Collections</a>
+                <a href="newcolc.php" class="text-xs tracking-widest uppercase text-gray-300">Collections</a>
             </nav>
 
             <div class="flex items-center gap-5">
