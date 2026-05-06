@@ -47,7 +47,7 @@ $currentUserName = $_SESSION['user_name'] ?? ($_SESSION['full_name'] ?? '');
 
 $lang = $_GET['lang'] ?? 'en';
 $lang = in_array($lang, ['en','ar','he']) ? $lang : 'en';
-$onlyNew = isset($_GET['new']) && $_GET['new'] == '1';
+
 $wishlistIds = [];
 
 if ($isLoggedIn) {
@@ -65,20 +65,6 @@ if ($isLoggedIn) {
 
 $products = [];
 
-$onlyNew = isset($_GET['new']) && $_GET['new'] == '1';
-
-$where = "";
-$params = [$lang, $lang, $lang];
-$types = "sss";
-
-if (!empty($selectedCategory)) {
-    $where .= " AND c.category_key = ?";
-    $params[] = $selectedCategory;
-    $types .= "s";
-}
-if ($onlyNew) {
-    $where .= " AND cl.is_new = 1";
-}
 $sql = "
 SELECT
     p.product_id,
@@ -124,16 +110,13 @@ LEFT JOIN product_variants pv
 LEFT JOIN product_images pi
     ON p.product_id = pi.product_id AND pi.is_main = 1
 
-WHERE 1=1 $where
-
 ORDER BY p.created_at DESC, p.product_id DESC, pv.variant_id ASC
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param($types, ...$params);
+$stmt->bind_param("sss", $lang, $lang, $lang);
 $stmt->execute();
 $res = $stmt->get_result();
-
 
 while ($r = $res->fetch_assoc()) {
     $pid = (int)$r['product_id'];

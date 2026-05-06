@@ -286,7 +286,7 @@ $total = $subtotal + $shipping;
 
         <nav class="hidden md:flex items-center gap-8 text-sm tracking-wider uppercase font-light" style="color:rgba(255,255,255,0.7);">
             <a href="index.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['home']) ?></a>
-            <a href="new_collection.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['collection']) ?></a>
+            <a href="newcolc.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['collection']) ?></a>
             <a href="shope.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['shop']) ?></a>
             <a href="about.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['our_story']) ?></a>
             <a href="contact.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['contact']) ?></a>
@@ -781,9 +781,8 @@ $total = $subtotal + $shipping;
 
         updateCart();
     }
-
     function goShopping() {
-        window.location.href = "shope.php?lang=<?= h($lang) ?>";
+        window.location.href = "newcolc.php?lang=<?= h($lang) ?>";
     }
 
     function goToCheckout() {
@@ -801,9 +800,10 @@ $total = $subtotal + $shipping;
         }
 
         localStorage.setItem("selectedCartIds", JSON.stringify(selected));
-        window.location.href = "order.php?lang=<?= h($lang) ?>";
-    }
+        localStorage.setItem("promoDiscount", promoDiscount);
 
+        window.location.href = "ORDER_2.php?lang=<?= h($lang) ?>";
+    }
     updateCart();
 </script>
 
