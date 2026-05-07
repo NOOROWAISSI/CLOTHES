@@ -287,7 +287,6 @@ $total = $subtotal + $shipping;
         <nav class="hidden md:flex items-center gap-8 text-sm tracking-wider uppercase font-light" style="color:rgba(255,255,255,0.7);">
             <a href="index.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['home']) ?></a>
             <a href="newcolc.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['collection']) ?></a>
-            <a href="shope.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['shop']) ?></a>
             <a href="about.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['our_story']) ?></a>
             <a href="contact.php?lang=<?= h($lang) ?>" class="nav-link hover:text-white transition-colors"><?= h($t['contact']) ?></a>
         </nav>

@@ -453,7 +453,12 @@
   }
 
   function saveOrder() {
-    showNotification('📌 Order saved — you can access it anytime', 'success');
+
+    showNotification('✅ Order placed successfully!', 'success');
+
+    setTimeout(() => {
+      window.location.href = "index.php";
+    }, 1200);
   }
 
   function resetOrder() {

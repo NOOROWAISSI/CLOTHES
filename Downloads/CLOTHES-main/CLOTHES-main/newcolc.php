@@ -419,7 +419,6 @@ ksort($sizes);
 
             <nav class="hidden md:flex items-center gap-8 text-sm tracking-wider uppercase font-light" style="color:rgba(255,255,255,.7);">
                 <a href="index.php?lang=<?= h($lang) ?>" class="nav-link">Home</a>
-                <a href="shope.php?lang=<?= h($lang) ?>" class="nav-link">Shop</a>
                 <a href="newcolc.php?lang=<?= h($lang) ?>" class="nav-link">Collection</a>
                 <a href="about.php?lang=<?= h($lang) ?>" class="nav-link">Our Story</a>
                 <a href="contact.php?lang=<?= h($lang) ?>" class="nav-link">Contact</a>
@@ -435,8 +434,7 @@ ksort($sizes);
 
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <a class="dropdown-link" href="index.php?lang=<?= h($lang) ?>">Home</a>
-                        <a class="dropdown-link" href="shope.php?lang=<?= h($lang) ?>">Shop</a>
-                        <a class="dropdown-link" href="newcolc.php?lang=<?= h($lang) ?>">New Collection</a>
+                        <a class="dropdown-link" href="newcolc.php?lang=<?= h($lang) ?>"> Collection</a>
                         <a class="dropdown-link" href="search.php?lang=<?= h($lang) ?>">Search</a>
                         <a class="dropdown-link" href="cart.php?lang=<?= h($lang) ?>">Cart</a>
                         <a class="dropdown-link" href="wishlist.php?lang=<?= h($lang) ?>">Wishlist</a>
@@ -478,7 +476,6 @@ ksort($sizes);
         <div class="mobile-menu md:hidden px-6 pb-4 text-white/70" id="mobile-menu">
             <nav class="flex flex-col gap-4 text-sm tracking-wider uppercase font-light pt-2 border-t border-white/10">
                 <a href="index.php?lang=<?= h($lang) ?>">Home</a>
-                <a href="shope.php?lang=<?= h($lang) ?>">Shop</a>
                 <a href="wishlist.php?lang=<?= h($lang) ?>">Wishlist</a>
                 <a href="cart.php?lang=<?= h($lang) ?>">Cart</a>
                 <button onclick="goUserPage()" class="text-left">User / Sign In</button>
@@ -642,8 +639,7 @@ ksort($sizes);
                 <div>
                     <h4 class="text-[10px] tracking-[.3em] uppercase mb-5 text-white/50">Shop</h4>
                     <nav class="flex flex-col gap-3">
-                        <a href="shope.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Shop</a>
-                        <a href="newcolc.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">New Collection</a>
+                        <a href="newcolc.php?lang=<?= h($lang) ?>" class="text-xs text-white/35 hover:text-white">Collection</a>
                     </nav>
                 </div>
 

@@ -1113,13 +1113,7 @@ function langUrl($newLang) {
                 </p>
             </div>
 
-            <div class="mt-8 flex flex-wrap gap-4">
-                <button onclick="goPage('order.php?lang=<?= htmlspecialchars($lang) ?>', true)" class="px-4 py-2 bg-white text-black"><?= $t['order'] ?></button>
-                <button onclick="window.location.href='new_collection.php?lang=<?= htmlspecialchars($lang) ?>'" class="px-4 py-2 bg-white text-black"><?= $t['new_collection'] ?></button>
-                <button onclick="goPage('wishlist.php?lang=<?= htmlspecialchars($lang) ?>', true)" class="px-4 py-2 bg-white text-black"><?= $t['wishlist'] ?></button>
-                <button onclick="goUserPage()" class="px-4 py-2 bg-white text-black"><?= $t['user'] ?></button>
-                <button onclick="window.location.href='item.php?lang=<?= htmlspecialchars($lang) ?>'" class="px-4 py-2 bg-white text-black"><?= $t['item'] ?></button>
-            </div>
+
         </div>
     </footer>
 
@@ -1213,32 +1207,50 @@ function langUrl($newLang) {
         })
             .then(res => res.text())
             .then(text => {
-                console.log(text);
 
                 let data;
+
                 try {
                     data = JSON.parse(text);
                 } catch (e) {
-                    alert('في خطأ داخل toggle_wishlist.php: ' + text);
+                    alert(text);
                     return;
                 }
 
+                let countEl = document.getElementById('wishlist-count');
+                let currentCount = parseInt(countEl.textContent || '0');
+
                 if (data.status === 'added') {
+
                     btn.textContent = '♥';
                     btn.style.color = '#ef4444';
+
+                    currentCount++;
+                    countEl.textContent = currentCount;
+
+                    countEl.classList.remove('hidden');
+
                     showToast('Added to wishlist ✓');
+
                 } else if (data.status === 'removed') {
+
                     btn.textContent = '♡';
                     btn.style.color = '';
+
+                    currentCount--;
+
+                    if (currentCount <= 0) {
+                        countEl.textContent = '0';
+                        countEl.classList.add('hidden');
+                    } else {
+                        countEl.textContent = currentCount;
+                    }
+
                     showToast('Removed from wishlist');
-                } else if (data.status === 'login') {
-                    window.location.href = withLang('signin.php');
-                } else {
-                    alert(data.message || 'Wishlist error');
                 }
+
             })
             .catch(err => {
-                alert('ملف toggle_wishlist.php مش موجود أو فيه مشكلة');
                 console.error(err);
             });
     };
