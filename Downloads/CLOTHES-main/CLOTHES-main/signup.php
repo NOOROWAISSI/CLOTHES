@@ -1,40 +1,91 @@
 <?php
-global $conn;
-include 'db.php';
+include_once "db.php";
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $error = "";
 
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $first_name = trim($_POST['first_name'] ?? "");
-    $last_name = trim($_POST['last_name'] ?? "");
+
+    $full_name = trim($_POST['full_name'] ?? "");
     $email = trim($_POST['email'] ?? "");
     $password = trim($_POST['password'] ?? "");
+    $confirm_password = trim($_POST['confirm_password'] ?? "");
+    $agree = $_POST['agree'] ?? "";
 
-    $full_name = $first_name . " " . $last_name;
+    if (
+            empty($full_name) ||
+            empty($email) ||
+            empty($password) ||
+            empty($confirm_password)
+    ) {
 
-    $check_sql = "SELECT user_id FROM users WHERE email = ? LIMIT 1";
-    $check_stmt = $conn->prepare($check_sql);
-    $check_stmt->bind_param("s", $email);
-    $check_stmt->execute();
-    $check_result = $check_stmt->get_result();
+        $error = "Please fill all fields";
 
-    if ($check_result->num_rows > 0) {
-        $error = "This email already exists";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        $error = "Invalid email address";
+
+    } elseif (strlen($password) < 8) {
+
+        $error = "Password must be at least 8 characters";
+
+    } elseif ($password !== $confirm_password) {
+
+        $error = "Passwords do not match";
+
+    } elseif ($agree !== "yes") {
+
+        $error = "Please agree to Terms & Privacy Policy";
+
     } else {
-        $insert_sql = "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)";
-        $insert_stmt = $conn->prepare($insert_sql);
-        $insert_stmt->bind_param("sss", $full_name, $email, $password);
 
-        if ($insert_stmt->execute()) {
-            $_SESSION['user_id'] = $insert_stmt->insert_id;
-            $_SESSION['full_name'] = $full_name;
-            $_SESSION['email'] = $email;
-            $_SESSION['role'] = 'user';
+        $check = $conn->prepare("SELECT user_id FROM users WHERE email=? LIMIT 1");
+        $check->bind_param("s", $email);
+        $check->execute();
 
-            header("Location: index.php");
-            exit;
+        $result = $check->get_result();
+
+        if ($result->num_rows > 0) {
+
+            $error = "This email already exists";
+
         } else {
-            $error = "Something went wrong";
+
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+            $insert = $conn->prepare("
+                INSERT INTO users (full_name, email, password)
+                VALUES (?, ?, ?)
+            ");
+
+            $insert->bind_param(
+                    "sss",
+                    $full_name,
+                    $email,
+                    $hashed_password
+            );
+
+            if ($insert->execute()) {
+
+                $_SESSION['user_id'] = $insert->insert_id;
+                $_SESSION['full_name'] = $full_name;
+                $_SESSION['email'] = $email;
+                $_SESSION['role'] = "user";
+
+                header("Location: index.php");
+                exit;
+
+            } else {
+
+                $error = "Something went wrong";
+            }
         }
     }
 }
@@ -43,602 +94,483 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Luxury Sign Up</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <title>Demoiselle — Sign Up</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;400;500;600&display=swap" rel="stylesheet">
+
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
         }
 
-        :root {
-            --black: #000;
-            --white: #fff;
-            --bg: #f7f7f5;
-            --line: #dddddd;
-            --text: #1a1a1a;
-            --muted: #7b7b7b;
-            --error: #c96a6a;
-            --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-            --radius: 16px;
-            --header-h: 74px;
+        :root{
+            --black:#000;
+            --white:#fff;
+            --bg:#f6f6f4;
+            --line:#ddd;
+            --text:#111;
+            --muted:#777;
+            --radius:16px;
         }
 
-        html, body {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+        body{
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            overflow-x:hidden;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
+        a{
+            text-decoration:none;
+            color:inherit;
         }
 
-        a {
-            text-decoration: none;
-            color: inherit;
+        .page{
+            min-height:100vh;
+            display:grid;
+            grid-template-columns:1fr 1fr;
         }
 
-        /* HEADER */
-        .header {
-            height: var(--header-h);
-            background: #000;
-            color: #fff;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            align-items: center;
-            padding: 0 28px;
+        .left{
+            position:relative;
+            overflow:hidden;
+            background:#eae7e2;
         }
 
-        .header-left {
-            display: flex;
-            align-items: center;
+        .left img{
+            width:100%;
+            height:100%;
+            object-fit:cover;
+            filter:grayscale(100%);
         }
 
-        .menu-icon {
-            font-size: 20px;
-            cursor: pointer;
-            transition: 0.3s ease;
+        .overlay-text{
+            position:absolute;
+            bottom:40px;
+            left:40px;
+            color:#fff;
         }
 
-        .menu-icon:hover {
-            opacity: 0.7;
+        .overlay-text h2{
+            font-family:'Cormorant Garamond',serif;
+            font-size:3rem;
+            font-weight:500;
+            letter-spacing:4px;
         }
 
-        .logo {
-            justify-self: center;
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            letter-spacing: 9px;
-            font-weight: 500;
+        .overlay-text p{
+            margin-top:10px;
+            letter-spacing:3px;
+            font-size:.8rem;
         }
 
-        .header-icons {
-            justify-self: end;
-            display: flex;
-            align-items: center;
-            gap: 18px;
+        .right{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:50px 30px;
+            background:#fbfbfa;
         }
 
-        .header-icons a {
-            color: #fff;
-            font-size: 1.1rem;
-            transition: transform 0.25s ease, opacity 0.25s ease;
+        .form-box{
+            width:100%;
+            max-width:470px;
         }
 
-        .header-icons a:hover {
-            transform: translateY(-2px);
-            opacity: 0.75;
+        .logo{
+            font-family:'Cormorant Garamond',serif;
+            font-size:2rem;
+            letter-spacing:7px;
+            margin-bottom:35px;
+            text-align:center;
         }
 
-        .bag-icon {
-            position: relative;
+        .title{
+            font-family:'Cormorant Garamond',serif;
+            font-size:2.6rem;
+            margin-bottom:8px;
+            letter-spacing:2px;
         }
 
-        .bag-count {
-            position: absolute;
-            top: -7px;
-            right: -8px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: #fff;
-            color: #000;
-            font-size: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
+        .subtitle{
+            color:var(--muted);
+            margin-bottom:28px;
+            line-height:1.6;
+            font-size:.95rem;
         }
 
-        /* MAIN */
-        .signup-page {
-            height: calc(100vh - var(--header-h));
-            display: grid;
-            grid-template-columns: 1.02fr 1fr;
+        form{
+            display:flex;
+            flex-direction:column;
+            gap:14px;
         }
 
-        /* LEFT PANEL */
-        .left-panel {
-            position: relative;
-            height: 100%;
-            overflow: hidden;
-            background: #ece8e3;
+        .input-group{
+            position:relative;
         }
 
-        .left-panel img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            filter: grayscale(100%);
+        .input-group input{
+            width:100%;
+            height:56px;
+            border:1px solid var(--line);
+            border-radius:var(--radius);
+            background:#fff;
+            padding:18px 48px 8px 48px;
+            outline:none;
+            font-size:.93rem;
+            transition:.25s;
         }
 
-        .vertical-text {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%) rotate(180deg);
-            writing-mode: vertical-rl;
-            font-size: 0.78rem;
-            letter-spacing: 6px;
-            color: rgba(0, 0, 0, 0.75);
-            font-weight: 400;
+        .input-group input:focus{
+            border-color:#000;
         }
 
-        .vertical-line {
-            position: absolute;
-            left: 52px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 1px;
-            height: 90px;
-            background: rgba(0, 0, 0, 0.3);
+        .input-group label{
+            position:absolute;
+            top:8px;
+            left:48px;
+            font-size:.65rem;
+            text-transform:uppercase;
+            letter-spacing:2px;
+            font-weight:600;
         }
 
-        /* RIGHT PANEL */
-        .right-panel {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px 34px;
-            background: #fbfbfa;
-            overflow: hidden;
+        .input-icon{
+            position:absolute;
+            left:18px;
+            top:50%;
+            transform:translateY(-50%);
+            color:#666;
         }
 
-        .form-wrap {
-            width: 100%;
-            max-width: 470px;
+        .eye-icon{
+            position:absolute;
+            right:18px;
+            top:50%;
+            transform:translateY(-50%);
+            cursor:pointer;
+            color:#666;
         }
 
-        .form-title {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.6rem;
-            letter-spacing: 3px;
-            font-weight: 500;
-            line-height: 1;
-            margin-bottom: 8px;
+        .error{
+            background:#fff0f0;
+            color:#b44;
+            border:1px solid #f1c6c6;
+            padding:14px;
+            border-radius:14px;
+            font-size:.9rem;
         }
 
-        .form-subtitle {
-            color: var(--muted);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 18px;
-            max-width: 390px;
+        .checkbox{
+            display:flex;
+            gap:10px;
+            font-size:.85rem;
+            color:#555;
+            line-height:1.5;
+            margin-top:2px;
         }
 
-        .form {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        .checkbox input{
+            margin-top:3px;
         }
 
-        /* INPUTS */
-        .input-group {
-            position: relative;
+        .checkbox a{
+            text-decoration:underline;
         }
 
-        .input-group input {
-            width: 100%;
-            height: 54px;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: #fff;
-            padding: 20px 42px 8px 46px;
-            font-size: 0.93rem;
-            color: var(--text);
-            outline: none;
-            transition: 0.28s ease;
-            box-shadow: 0 0 0 rgba(0,0,0,0);
+        .signup-btn{
+            height:54px;
+            border:none;
+            border-radius:14px;
+            background:#000;
+            color:#fff;
+            cursor:pointer;
+            font-size:.88rem;
+            letter-spacing:4px;
+            text-transform:uppercase;
+            transition:.25s;
         }
 
-        .input-group input:focus {
-            border-color: #000;
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
-            transform: translateY(-1px);
+        .signup-btn:hover{
+            transform:translateY(-2px);
         }
 
-        .input-group label {
-            position: absolute;
-            top: 9px;
-            left: 46px;
-            font-size: 0.64rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #111;
-            font-weight: 600;
-            pointer-events: none;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 17px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #555;
-            font-size: 0.92rem;
-        }
-
-        .eye-icon {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #666;
-            cursor: pointer;
-            transition: 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .eye-icon:hover {
-            color: #000;
-        }
-
-        .error-text {
-            font-size: 0.82rem;
-            color: var(--error);
-            margin: -2px 0 0 6px;
-        }
-
-        /* CHECKBOX */
-        .checkbox-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-top: 2px;
-            line-height: 1.5;
-            color: #444;
-            font-size: 0.85rem;
-        }
-
-        .checkbox-row input {
-            appearance: none;
-            width: 18px;
-            height: 18px;
-            border: 1.4px solid #bbb;
-            border-radius: 5px;
-            margin-top: 1px;
-            cursor: pointer;
-            position: relative;
-            flex-shrink: 0;
-            background: #fff;
-            transition: 0.25s ease;
-        }
-
-        .checkbox-row input:checked {
-            background: #000;
-            border-color: #000;
-        }
-
-        .checkbox-row input:checked::after {
-            content: "✓";
-            position: absolute;
-            color: #fff;
-            font-size: 11px;
-            left: 4px;
-            top: -1px;
-        }
-
-        .checkbox-row a {
-            text-decoration: underline;
-            text-underline-offset: 3px;
-            transition: 0.25s ease;
-        }
-
-        .checkbox-row a:hover {
-            opacity: 0.7;
-        }
-
-        /* BUTTONS */
-        .signup-btn {
-            height: 52px;
-            border: none;
-            border-radius: 14px;
-            background: #000;
-            color: #fff;
-            font-size: 0.9rem;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s ease;
-            margin-top: 2px;
-            box-shadow: 0 14px 26px rgba(0, 0, 0, 0.12);
-        }
-
-        .signup-btn:hover {
-            transform: translateY(-2px);
-            background: #111;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 2px 0;
+        .divider{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin:6px 0;
         }
 
         .divider::before,
-        .divider::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: #d8d8d8;
+        .divider::after{
+            content:"";
+            flex:1;
+            height:1px;
+            background:#ddd;
         }
 
-        .divider span {
-            font-size: 0.66rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #555;
-            white-space: nowrap;
+        .divider span{
+            font-size:.7rem;
+            letter-spacing:2px;
+            color:#666;
+            text-transform:uppercase;
         }
 
-        .social-btn {
-            width: 100%;
-            height: 48px;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 0.82rem;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: 0.3s ease;
-            box-shadow: var(--shadow);
+        .social-btn{
+            width:100%;
+            height:50px;
+            border:1px solid #ddd;
+            background:#fff;
+            border-radius:14px;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:10px;
+            transition:.25s;
+            font-size:.82rem;
+            letter-spacing:2px;
+            text-transform:uppercase;
         }
 
-        .social-btn:hover {
-            border-color: #000;
-            transform: translateY(-2px);
+        .social-btn:hover{
+            border-color:#000;
+            transform:translateY(-2px);
         }
 
-        .social-btn.google i {
-            color: #db4437;
-            font-size: 1.05rem;
+        .signin-link{
+            margin-top:6px;
+            text-align:center;
+            color:#555;
+            font-size:.92rem;
         }
 
-        .social-btn.apple i {
-            color: #000;
-            font-size: 1.1rem;
+        .signin-link a{
+            text-decoration:underline;
         }
 
-        .signin-text {
-            text-align: center;
-            margin-top: 4px;
-            font-size: 0.9rem;
-            color: #444;
-        }
+        @media(max-width:950px){
 
-        .signin-text a {
-            text-decoration: underline;
-            text-underline-offset: 4px;
-            transition: 0.25s ease;
-        }
-
-        .signin-text a:hover {
-            opacity: 0.75;
-        }
-
-        /* Laptop fit */
-        @media (max-height: 800px) {
-            .form-title {
-                font-size: 2.3rem;
+            .page{
+                grid-template-columns:1fr;
             }
 
-            .form-subtitle {
-                margin-bottom: 14px;
-                font-size: 0.9rem;
+            .left{
+                height:320px;
             }
 
-            .form {
-                gap: 8px;
-            }
-
-            .input-group input {
-                height: 50px;
-            }
-
-            .signup-btn {
-                height: 48px;
-            }
-
-            .social-btn {
-                height: 44px;
-            }
-
-            .vertical-text,
-            .vertical-line {
-                display: none;
+            .overlay-text h2{
+                font-size:2.2rem;
             }
         }
 
-        /* Mobile */
-        @media (max-width: 900px) {
-            html, body {
-                overflow: auto;
+        @media(max-width:600px){
+
+            .right{
+                padding:40px 18px;
             }
 
-            .signup-page {
-                height: auto;
-                min-height: calc(100vh - var(--header-h));
-                grid-template-columns: 1fr;
+            .title{
+                font-size:2rem;
             }
 
-            .left-panel {
-                min-height: 280px;
-            }
-
-            .right-panel {
-                padding: 28px 20px 34px;
-            }
-
-            .form-wrap {
-                max-width: 100%;
-            }
-
-            .vertical-text,
-            .vertical-line {
-                display: none;
+            .logo{
+                font-size:1.6rem;
             }
         }
 
-        @media (max-width: 600px) {
-            .header {
-                padding: 0 16px;
-            }
-
-            .logo {
-                font-size: 1.45rem;
-                letter-spacing: 5px;
-            }
-
-            .header-icons {
-                gap: 12px;
-            }
-
-            .form-title {
-                font-size: 2rem;
-            }
-
-            .form-subtitle {
-                font-size: 0.88rem;
-            }
-        }
     </style>
 </head>
 <body>
 
-<header class="header">
-    <div class="header-left">
-        <i class="fa-solid fa-bars menu-icon"></i>
-    </div>
+<div class="page">
 
-    <div class="logo">DEMOISELLE</div>
+    <section class="left">
 
-    <div class="header-icons">
-        <a href="#"><i class="fa-solid fa-magnifying-glass"></i></a>
-        <a href="#"><i class="fa-regular fa-user"></i></a>
-        <a href="#" class="bag-icon">
-            <i class="fa-solid fa-bag-shopping"></i>
-            <span class="bag-count">0</span>
-        </a>
-    </div>
-</header>
+        <img src="pic/signup4.jpg" alt="Fashion">
 
-<main class="signup-page">
-    <section class="left-panel">
-        <!-- حطي الصورة هون -->
-        <img src="pic/signup4.jpg" alt="Luxury Fashion Model">
+        <div class="overlay-text">
+            <h2>DEMOISELLE</h2>
+            <p>TIMELESS ELEGANCE</p>
+        </div>
 
-        <div class="vertical-text">TIMELESS ELEGANCE &nbsp; NEW COLLECTION</div>
-        <div class="vertical-line"></div>
     </section>
 
-    <section class="right-panel">
-        <div class="form-wrap">
-            <h1 class="form-title">CREATE ACCOUNT</h1>
-            <p class="form-subtitle">
-                Join Maryam and discover a world of timeless fashion.
+    <section class="right">
+
+        <div class="form-box">
+
+            <div class="logo">DEMOISELLE</div>
+
+            <h1 class="title">Create Account</h1>
+
+            <p class="subtitle">
+                Join Demoiselle and discover timeless feminine fashion.
             </p>
 
-            <form class="form">
+            <?php if(!empty($error)): ?>
+                <div class="error">
+                    <?= h($error) ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+
                 <div class="input-group">
                     <i class="fa-regular fa-user input-icon"></i>
+
                     <label>Full Name</label>
-                    <input type="text" placeholder="Enter your full name">
+
+                    <input
+                            type="text"
+                            name="full_name"
+                            placeholder="Enter your full name"
+                            required
+                    >
                 </div>
 
                 <div class="input-group">
                     <i class="fa-regular fa-envelope input-icon"></i>
+
                     <label>Email Address</label>
-                    <input type="email" placeholder="Enter your email">
+
+                    <input
+                            type="email"
+                            name="email"
+                            placeholder="Enter your email"
+                            required
+                    >
                 </div>
 
                 <div class="input-group">
                     <i class="fa-solid fa-lock input-icon"></i>
+
                     <label>Password</label>
-                    <input type="password" placeholder="Enter your password">
+
+                    <input
+                            type="password"
+                            name="password"
+                            class="password-input"
+                            placeholder="Enter your password"
+                            required
+                    >
+
                     <i class="fa-regular fa-eye eye-icon"></i>
                 </div>
-
-                <p class="error-text">Password must be at least 8 characters.</p>
 
                 <div class="input-group">
                     <i class="fa-solid fa-lock input-icon"></i>
+
                     <label>Confirm Password</label>
-                    <input type="password" placeholder="Confirm your password">
+
+                    <input
+                            type="password"
+                            name="confirm_password"
+                            class="password-input"
+                            placeholder="Confirm your password"
+                            required
+                    >
+
                     <i class="fa-regular fa-eye eye-icon"></i>
                 </div>
 
-                <label class="checkbox-row">
-                    <input type="checkbox">
+                <label class="checkbox">
+
+                    <input
+                            type="checkbox"
+                            name="agree"
+                            value="yes"
+                            required
+                    >
+
                     <span>
-              I agree to the <a href="#">Terms & Conditions</a> and
-              <a href="#">Privacy Policy</a>.
-            </span>
+                        I agree to the
+                        <a href="terms_conditions.php">Terms & Conditions</a>
+                        and
+                        <a href="privacy_policy.php">Privacy Policy</a>.
+                    </span>
+
                 </label>
 
-                <button type="submit" class="signup-btn">Sign Up</button>
+                <button type="submit" class="signup-btn">
+                    Sign Up
+                </button>
 
                 <div class="divider">
-                    <span>Or sign up with</span>
+                    <span>Or Continue With</span>
                 </div>
 
-                <button type="button" class="social-btn google">
+                <button
+                        type="button"
+                        class="social-btn"
+                        onclick="alert('Google login will be added later')"
+                >
                     <i class="fa-brands fa-google"></i>
-                    <span>Continue with Google</span>
+                    Continue with Google
                 </button>
 
-                <button type="button" class="social-btn apple">
+                <button
+                        type="button"
+                        class="social-btn"
+                        onclick="alert('Apple login will be added later')"
+                >
                     <i class="fa-brands fa-apple"></i>
-                    <span>Continue with Apple</span>
+                    Continue with Apple
                 </button>
 
-                <p class="signin-text">
-                    Already have an account? <a href="#">Sign in</a>
+                <p class="signin-link">
+                    Already have an account?
+                    <a href="signin.php">Sign In</a>
                 </p>
+
             </form>
+
         </div>
+
     </section>
-</main>
+
+</div>
+
+<script>
+
+    document.querySelectorAll(".eye-icon").forEach(icon => {
+
+        icon.addEventListener("click", function () {
+
+            const input = this.parentElement.querySelector(".password-input");
+
+            if (input.type === "password") {
+
+                input.type = "text";
+
+                this.classList.remove("fa-eye");
+                this.classList.add("fa-eye-slash");
+
+            } else {
+
+                input.type = "password";
+
+                this.classList.remove("fa-eye-slash");
+                this.classList.add("fa-eye");
+            }
+
+        });
+
+    });
+
+</script>
 
 </body>
 </html>
