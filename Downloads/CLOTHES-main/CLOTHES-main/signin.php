@@ -443,8 +443,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <a href="forgot.php" class="fashion-link">Forgot details?</a>
-                    <a href="signup.php" class="fashion-link">Create account</a>
+
+                    <a href="./forgot.php" class="fashion-link">
+                        Forgot Password?
+                    </a>
+
+                    <a href="signup.php" class="fashion-link">
+                        Create account
+                    </a>
+
                 </div>
 
                 <button type="submit" class="fashion-btn">
