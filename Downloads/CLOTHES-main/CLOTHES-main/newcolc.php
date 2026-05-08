@@ -2,12 +2,10 @@
 global $conn;
 include_once "db.php";
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-function h($v) {
-    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+if (!function_exists('h')) {
+    function h($v) {
+        return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+    }
 }
 
 function normalizeColor($color) {
@@ -48,6 +46,9 @@ $currentUserName = $_SESSION['user_name'] ?? ($_SESSION['full_name'] ?? '');
 $lang = $_GET['lang'] ?? 'en';
 $lang = in_array($lang, ['en','ar','he']) ? $lang : 'en';
 
+$selectedCategory = $_GET['category'] ?? '';
+$selectedNew = $_GET['new'] ?? '';
+
 $wishlistIds = [];
 
 if ($isLoggedIn) {
@@ -63,7 +64,20 @@ if ($isLoggedIn) {
     }
 }
 
-$products = [];
+$where = "";
+$params = [$lang, $lang, $lang];
+$types = "sss";
+
+if ($selectedCategory !== "") {
+    $where .= " AND c.category_key = ?";
+    $params[] = $selectedCategory;
+    $types .= "s";
+}
+
+/* إذا بدك new=1 يرجع آخر المنتجات فقط بدون is_new */
+if ($selectedNew === "1") {
+    $where .= "";
+}
 
 $sql = "
 SELECT
@@ -71,7 +85,7 @@ SELECT
     p.price,
     p.category_id,
     p.collection_id,
-    COALESCE(cl.is_new, 0) AS is_new,
+    0 AS is_new,
 
     COALESCE(pt.product_name, CONCAT('Product #', p.product_id)) AS product_name,
     COALESCE(pt.description, '') AS description,
@@ -110,13 +124,17 @@ LEFT JOIN product_variants pv
 LEFT JOIN product_images pi
     ON p.product_id = pi.product_id AND pi.is_main = 1
 
+WHERE 1=1 $where
+
 ORDER BY p.created_at DESC, p.product_id DESC, pv.variant_id ASC
 ";
 
 $stmt = $conn->prepare($sql);
-$stmt->bind_param("sss", $lang, $lang, $lang);
+$stmt->bind_param($types, ...$params);
 $stmt->execute();
 $res = $stmt->get_result();
+
+$products = [];
 
 while ($r = $res->fetch_assoc()) {
     $pid = (int)$r['product_id'];
@@ -139,7 +157,10 @@ while ($r = $res->fetch_assoc()) {
     if (!empty($r['variant_id'])) {
         $colorName = normalizeColor($r['color']);
         $sizeName = trim((string)$r['size']);
-        $img = $r['variant_image_url'] ?: ($r['image_url'] ?: 'pic/default.jpg');
+
+        $img = !empty($r['variant_image_url'])
+                ? $r['variant_image_url']
+                : (!empty($r['image_url']) ? $r['image_url'] : 'pic/default.jpg');
 
         $products[$pid]['variants'][] = [
                 'variant_id' => (int)$r['variant_id'],
@@ -859,10 +880,23 @@ ksort($sizes);
             const card = document.createElement('div');
             card.className = 'product-card';
 
+            card.style.cursor = 'pointer';
+            card.addEventListener('click', function(e) {
+                if (
+                    e.target.closest('button') ||
+                    e.target.closest('.color-btn-' + p.id) ||
+                    e.target.closest('.size-btn-' + p.id)
+                ) {
+                    return;
+                }
+
+                window.location.href = `item3.php?product_id=${p.id}&lang=${currentLang}`;
+            });
             card.innerHTML = `
                 <div class="relative overflow-hidden rounded-sm bg-zinc-100" style="aspect-ratio:3/4;">
-                    <img id="img-${p.id}" src="${firstImage(p)}" class="product-img w-full h-full object-cover" alt="${p.name}">
-
+<a href="item3.php?product_id=${p.id}&lang=${currentLang}">
+    <img id="img-${p.id}" src="${firstImage(p)}" class="product-img w-full h-full object-cover" alt="${p.name}">
+</a>
                     ${parseInt(p.is_new) === 1 ? `<div class="new-ribbon">NEW</div>` : ''}
 
                     <span class="absolute top-3 left-3 px-2 py-1 uppercase font-medium text-[9px] tracking-widest bg-black text-white z-10">

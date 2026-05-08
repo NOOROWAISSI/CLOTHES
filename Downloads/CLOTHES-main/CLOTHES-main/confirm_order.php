@@ -18,13 +18,14 @@ if ($payment === '') {
     exit;
 }
 
+$payment_method = ($payment === "card") ? "CARD" : "CASH";
+
 $q = $conn->prepare("
 SELECT 
     c.cart_id,
     c.quantity,
     pv.variant_id,
     pv.quantity AS stock_qty,
-    p.product_id,
     p.price
 FROM cart c
 JOIN product_variants pv ON c.variant_id = pv.variant_id
@@ -57,36 +58,51 @@ while ($row = $res->fetch_assoc()) {
     }
 
     $subtotal += $price * $qty;
-    $items[] = $row;
+
+    $items[] = [
+        "variant_id" => (int)$row['variant_id'],
+        "quantity" => $qty,
+        "price" => $price
+    ];
 }
 
-$delivery_cost = 0;
+$delivery_price = 0;
 
 if ($subtotal < 100) {
-    $delivery_cost = ($delivery === "express") ? 9.99 : 4.99;
+    $delivery_price = ($delivery === "express") ? 9.99 : 4.99;
 }
 
-$total = $subtotal + $delivery_cost;
+$total_price = $subtotal + $delivery_price;
+
+$area_id = null;
+$areaQ = $conn->prepare("SELECT area_id FROM delivery_areas LIMIT 1");
+$areaQ->execute();
+$areaRes = $areaQ->get_result();
+
+if ($areaRow = $areaRes->fetch_assoc()) {
+    $area_id = (int)$areaRow['area_id'];
+}
+
 $order_number = "DM-" . date("Y") . "-" . rand(10000, 99999);
 
 $conn->begin_transaction();
 
 try {
+
     $order_stmt = $conn->prepare("
         INSERT INTO orders 
-        (user_id, order_number, subtotal, delivery_cost, total, payment_method, delivery_method, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'NEW')
+        (order_number, user_id, area_id, subtotal, delivery_price, total_price, order_status)
+        VALUES (?, ?, ?, ?, ?, ?, 'NEW')
     ");
 
     $order_stmt->bind_param(
-        "isdddss",
-        $user_id,
+        "siiddd",
         $order_number,
+        $user_id,
+        $area_id,
         $subtotal,
-        $delivery_cost,
-        $total,
-        $payment,
-        $delivery
+        $delivery_price,
+        $total_price
     );
 
     $order_stmt->execute();
@@ -94,8 +110,8 @@ try {
 
     $item_stmt = $conn->prepare("
         INSERT INTO order_items
-        (order_id, product_id, variant_id, quantity, price)
-        VALUES (?, ?, ?, ?, ?)
+        (order_id, variant_id, quantity, price_at_order)
+        VALUES (?, ?, ?, ?)
     ");
 
     $stock_stmt = $conn->prepare("
@@ -105,17 +121,27 @@ try {
     ");
 
     foreach ($items as $item) {
-        $product_id = (int)$item['product_id'];
         $variant_id = (int)$item['variant_id'];
         $qty = (int)$item['quantity'];
         $price = (float)$item['price'];
 
-        $item_stmt->bind_param("iiiid", $order_id, $product_id, $variant_id, $qty, $price);
+        $item_stmt->bind_param("iiid", $order_id, $variant_id, $qty, $price);
         $item_stmt->execute();
 
         $stock_stmt->bind_param("ii", $qty, $variant_id);
         $stock_stmt->execute();
     }
+
+    $payment_status = ($payment_method === "CARD") ? "PAID" : "PENDING";
+
+    $payment_stmt = $conn->prepare("
+        INSERT INTO payments
+        (order_id, method, status)
+        VALUES (?, ?, ?)
+    ");
+
+    $payment_stmt->bind_param("iss", $order_id, $payment_method, $payment_status);
+    $payment_stmt->execute();
 
     $clear = $conn->prepare("DELETE FROM cart WHERE user_id = ?");
     $clear->bind_param("i", $user_id);
@@ -139,3 +165,4 @@ try {
     ]);
     exit;
 }
+?>

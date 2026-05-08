@@ -1,4 +1,5 @@
 <?php
+global $conn;
 include_once "db.php";
 
 if (session_status() === PHP_SESSION_NONE) {

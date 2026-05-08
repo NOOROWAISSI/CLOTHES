@@ -1,4 +1,13 @@
 <?php
+if (
+        !isset($_SESSION['admin_id']) ||
+        !isset($_SESSION['role']) ||
+        $_SESSION['role'] !== 'admin'
+) {
+    header("Location: signin.php");
+    exit;
+}
+
 global $conn;
 include "db.php";
 

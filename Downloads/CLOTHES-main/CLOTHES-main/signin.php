@@ -5,44 +5,47 @@ include 'db.php';
 $error = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = $_POST['email'] ?? "";
-    $password = $_POST['password'] ?? "";
 
-    // 🔹 أول شي نتحقق إذا Admin
-    $admin_sql = "SELECT * FROM admin WHERE email = ? AND password = ? LIMIT 1";
+    $email = trim($_POST['email'] ?? "");
+    $password = trim($_POST['password'] ?? "");
+
+    $admin_sql = "SELECT * FROM admin WHERE email = ? LIMIT 1";
     $stmt_admin = $conn->prepare($admin_sql);
-    $stmt_admin->bind_param("ss", $email, $password);
+    $stmt_admin->bind_param("s", $email);
     $stmt_admin->execute();
     $admin_result = $stmt_admin->get_result();
 
     if ($admin_result->num_rows === 1) {
         $admin = $admin_result->fetch_assoc();
 
-        $_SESSION['admin_id'] = $admin['admin_id'];
-        $_SESSION['full_name'] = $admin['full_name'];
-        $_SESSION['role'] = 'admin';
+        if ($password === $admin['password']) {
+            $_SESSION['admin_id'] = $admin['admin_id'];
+            $_SESSION['full_name'] = $admin['full_name'];
+            $_SESSION['role'] = 'admin';
 
-        header("Location: ad.php");
-        exit;
+            header("Location: admin.php");
+            exit;
+        }
     }
 
-    // 🔹 إذا مش Admin → نشوف User
-    $user_sql = "SELECT * FROM users WHERE email = ? AND password = ? LIMIT 1";
+    $user_sql = "SELECT * FROM users WHERE email = ? LIMIT 1";
     $stmt_user = $conn->prepare($user_sql);
-    $stmt_user->bind_param("ss", $email, $password);
+    $stmt_user->bind_param("s", $email);
     $stmt_user->execute();
     $user_result = $stmt_user->get_result();
 
     if ($user_result->num_rows === 1) {
         $user = $user_result->fetch_assoc();
 
-        $_SESSION['user_id'] = $user['user_id'];
-        $_SESSION['full_name'] = $user['full_name'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = 'user';
+        if ($password === $user['password']) {
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['full_name'] = $user['full_name'];
+            $_SESSION['email'] = $user['email'];
+            $_SESSION['role'] = 'user';
 
-        header("Location: index.php");
-        exit;
+            header("Location: index.php");
+            exit;
+        }
     }
 
     $error = "Wrong email or password";
@@ -414,7 +417,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <p class="error-msg"><?= htmlspecialchars($error) ?></p>
             <?php endif; ?>
 
-            <form id="fashionForm" method="POST" action="signin.php">
+            <form id="fashionForm" method="POST" action="">
 
                 <div class="fashion-input-group">
                     <label class="fashion-label" for="email">Email Address</label>
@@ -444,7 +447,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
 
-                    <a href="./forgot.php" class="fashion-link">
+                    <a href="forget.php" class="fashion-link">
                         Forgot Password?
                     </a>
 

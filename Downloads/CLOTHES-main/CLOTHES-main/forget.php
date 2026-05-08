@@ -1,46 +1,80 @@
 <?php
-include 'db.php';
+global $conn;
+include "db.php";
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require dirname(__DIR__) . "/vendor/autoload.php";
 
 $error = "";
 $success = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
-    $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
-    $confirm = trim($_POST['confirm']);
+    $email = trim($_POST['email'] ?? "");
 
-    if ($email == "" || $password == "" || $confirm == "") {
-
-        $error = "Please fill all fields";
-
-    } elseif ($password != $confirm) {
-
-        $error = "Passwords do not match";
-
+    if ($email === "") {
+        $error = "Please enter your email";
     } else {
 
-        $check = $conn->prepare("SELECT user_id FROM users WHERE email=?");
+        $check = $conn->prepare("SELECT user_id FROM users WHERE email=? LIMIT 1");
         $check->bind_param("s", $email);
         $check->execute();
-
         $result = $check->get_result();
 
-        if ($result->num_rows == 0) {
-
+        if ($result->num_rows === 0) {
             $error = "Email not found";
-
         } else {
 
-            $hashed = password_hash($password, PASSWORD_DEFAULT);
+            $code = strval(rand(100000, 999999));
+            $expires_at = date("Y-m-d H:i:s", strtotime("+10 minutes"));
 
-            $update = $conn->prepare("UPDATE users SET password=? WHERE email=?");
-            $update->bind_param("ss", $hashed, $email);
+            $old = $conn->prepare("UPDATE password_resets SET used=1 WHERE email=?");
+            $old->bind_param("s", $email);
+            $old->execute();
 
-            if ($update->execute()) {
-                $success = "Password updated successfully";
-            } else {
-                $error = "Something went wrong";
+            $stmt = $conn->prepare("
+                INSERT INTO password_resets (email, code, expires_at)
+                VALUES (?, ?, ?)
+            ");
+            $stmt->bind_param("sss", $email, $code, $expires_at);
+            $stmt->execute();
+
+            $mail = new PHPMailer(true);
+
+            try {
+                $mail->isSMTP();
+                $mail->Host = "smtp.gmail.com";
+                $mail->SMTPAuth = true;
+
+                $mail->Username = "noorfayek321@gmail.com";
+                $mail->Password = "veek mrfq jazh krkt";
+
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port = 587;
+
+                $mail->setFrom("noorfayek321@gmail.com", "Demoiselle");
+                $mail->addAddress($email);
+
+                $mail->isHTML(true);
+                $mail->Subject = "Demoiselle Password Reset Code";
+                $mail->Body = "
+                    <div style='font-family:Arial;padding:25px'>
+                        <h2>Demoiselle</h2>
+                        <p>Your reset code is:</p>
+                        <h1 style='letter-spacing:6px'>$code</h1>
+                        <p>This code expires in 10 minutes.</p>
+                    </div>
+                ";
+
+                $mail->send();
+
+                header("Location: verify_code.php?email=" . urlencode($email));
+                exit;
+
+            } catch (Exception $e) {
+                $error = "Email could not be sent";
             }
         }
     }
@@ -49,23 +83,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <title>Forgot Password</title>
-
     <script src="https://cdn.tailwindcss.com"></script>
-
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
 
     <style>
-
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
-        }
-
+        *{margin:0;padding:0;box-sizing:border-box}
         body{
             background:#f8f8f8;
             font-family:'Outfit',sans-serif;
@@ -75,7 +100,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             align-items:center;
             padding:30px;
         }
-
         .box{
             width:420px;
             background:white;
@@ -83,7 +107,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             box-shadow:0 10px 40px rgba(0,0,0,0.08);
             border-radius:12px;
         }
-
         .logo{
             text-align:center;
             font-size:13px;
@@ -91,7 +114,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             margin-bottom:35px;
             font-weight:300;
         }
-
         h1{
             font-family:'Cormorant Garamond',serif;
             font-size:45px;
@@ -99,18 +121,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             text-align:center;
             margin-bottom:10px;
         }
-
         .sub{
             text-align:center;
             color:#777;
             font-size:14px;
             margin-bottom:35px;
         }
-
-        .input-group{
-            margin-bottom:22px;
-        }
-
+        .input-group{margin-bottom:22px}
         label{
             display:block;
             margin-bottom:8px;
@@ -119,7 +136,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             text-transform:uppercase;
             color:#777;
         }
-
         input{
             width:100%;
             border:none;
@@ -129,11 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size:15px;
             background:transparent;
         }
-
-        input:focus{
-            border-bottom:1px solid black;
-        }
-
+        input:focus{border-bottom:1px solid black}
         button{
             width:100%;
             margin-top:15px;
@@ -144,27 +156,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             letter-spacing:3px;
             text-transform:uppercase;
             cursor:pointer;
-            transition:.3s;
         }
-
-        button:hover{
-            background:#222;
-        }
-
         .msg{
             margin-bottom:20px;
             font-size:14px;
             text-align:center;
         }
-
-        .error{
-            color:#b00020;
-        }
-
-        .success{
-            color:green;
-        }
-
+        .error{color:#b00020}
+        .success{color:green}
         .back{
             display:block;
             text-align:center;
@@ -175,61 +174,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             letter-spacing:2px;
             text-transform:uppercase;
         }
-
-        .back:hover{
-            opacity:.7;
-        }
-
     </style>
 </head>
 
 <body>
 
 <div class="box">
-
     <div class="logo">DEMOISELLE</div>
 
     <h1>Forgot Password</h1>
 
-    <p class="sub">
-        Enter your email and create a new password
-    </p>
+    <p class="sub">Enter your email to receive a reset code</p>
 
-    <?php if($error != ""): ?>
-        <div class="msg error"><?= $error ?></div>
-    <?php endif; ?>
-
-    <?php if($success != ""): ?>
-        <div class="msg success"><?= $success ?></div>
+    <?php if($error !== ""): ?>
+        <div class="msg error"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
 
     <form method="POST">
-
         <div class="input-group">
             <label>Email</label>
             <input type="email" name="email" required>
         </div>
 
-        <div class="input-group">
-            <label>New Password</label>
-            <input type="password" name="password" required>
-        </div>
-
-        <div class="input-group">
-            <label>Confirm Password</label>
-            <input type="password" name="confirm" required>
-        </div>
-
-        <button type="submit">
-            Reset Password
-        </button>
-
+        <button type="submit">Send Code</button>
     </form>
 
-    <a href="signin.php" class="back">
-        Back To Sign In
-    </a>
-
+    <a href="signin.php" class="back">Back To Sign In</a>
 </div>
 
 </body>
