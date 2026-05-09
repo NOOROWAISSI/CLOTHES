@@ -31,6 +31,7 @@ $stmt = $conn->prepare("
 SELECT
     p.product_id,
     p.price,
+    c.category_key,
     COALESCE(pt.product_name, CONCAT('Product #', p.product_id)) AS product_name,
     COALESCE(pt.description, '') AS description,
     COALESCE(ct.category_name, c.category_key, 'Category') AS category_name
@@ -125,6 +126,164 @@ if (count($images) === 0) {
 
 $firstSize = count($sizes) ? array_values($sizes)[0] : '';
 $firstColor = count($colors) ? array_values($colors)[0] : '';
+
+$currentCategoryKey = strtolower(trim($product['category_key'] ?? ''));
+$currentCategoryName = strtolower(trim($product['category_name'] ?? ''));
+$currentColor = strtolower(trim($firstColor ?? ''));
+$currentPrice = (float)$product['price'];
+
+$styleRules = [
+        'dresses' => ['bags','belts','jackets','blazers'],
+        'dress' => ['bags','belts','jackets','blazers'],
+        'jeans' => ['shirts','blouses','jackets','bags'],
+        'pants' => ['shirts','blouses','blazers','bags'],
+        'blazers' => ['pants','shirts','bags'],
+        'blazer' => ['pants','shirts','bags'],
+        'shirts' => ['pants','jeans','bags','jackets'],
+        'shirt' => ['pants','jeans','bags','jackets'],
+        'blouses' => ['pants','skirts','bags'],
+        'blouse' => ['pants','skirts','bags'],
+        'skirts' => ['blouses','shirts','bags','jackets'],
+        'jackets' => ['pants','jeans','shirts','bags'],
+        'bags' => ['dresses','blazers','jeans','pants'],
+        'belts' => ['dresses','pants','jeans'],
+];
+
+$colorHarmony = [
+        'black' => ['white','gray','grey','beige','gold','red'],
+        'white' => ['black','beige','blue','pink','brown'],
+        'beige' => ['white','brown','black','gold'],
+        'brown' => ['beige','white','black','gold'],
+        'blue' => ['white','gray','grey','black','beige'],
+        'navy' => ['white','beige','gray','grey','gold'],
+        'pink' => ['white','beige','gray','grey'],
+        'red' => ['black','white','beige','gold'],
+        'green' => ['beige','white','brown','black'],
+        'gray' => ['black','white','blue','pink'],
+        'grey' => ['black','white','blue','pink'],
+        'purple' => ['white','black','beige'],
+        'yellow' => ['white','black','blue'],
+        'gold' => ['black','white','beige','brown'],
+];
+
+$matchCategories = ['bags','jackets','pants'];
+
+foreach ($styleRules as $key => $targets) {
+    if (
+            strpos($currentCategoryKey, $key) !== false ||
+            strpos($currentCategoryName, $key) !== false
+    ) {
+        $matchCategories = $targets;
+        break;
+    }
+}
+
+$targetColors = [$currentColor];
+
+if (isset($colorHarmony[$currentColor])) {
+    $targetColors = array_merge($targetColors, $colorHarmony[$currentColor]);
+}
+
+$targetColors = array_values(array_unique(array_filter($targetColors)));
+
+$catPlaceholders = implode(',', array_fill(0, count($matchCategories), '?'));
+$colorPlaceholders = implode(',', array_fill(0, count($targetColors), '?'));
+
+$matchSql = "
+SELECT
+    p.product_id,
+    p.price,
+    COALESCE(pt.product_name, CONCAT('Product #', p.product_id)) AS product_name,
+    COALESCE(pi.image_url, pv.variant_image_url, 'pic/default.jpg') AS image_url,
+    c.category_key,
+    LOWER(pv.color) AS match_color,
+
+    (
+        60
+
+        + CASE
+            WHEN LOWER(pv.color) = ?
+            THEN 45
+            ELSE 0
+          END
+
+        + CASE
+            WHEN LOWER(pv.color) IN ($colorPlaceholders)
+            THEN 30
+            ELSE 0
+          END
+
+        + CASE
+            WHEN ABS(p.price - ?) <= 20
+            THEN 20
+            WHEN ABS(p.price - ?) <= 50
+            THEN 10
+            ELSE 0
+          END
+
+        + CASE
+            WHEN pv.quantity > 0
+            THEN 30
+            ELSE -200
+          END
+    ) AS match_score
+
+FROM products p
+
+JOIN categories c
+    ON p.category_id = c.category_id
+
+LEFT JOIN product_translations pt
+    ON p.product_id = pt.product_id
+    AND pt.language_code = ?
+
+LEFT JOIN product_images pi
+    ON p.product_id = pi.product_id
+    AND pi.is_main = 1
+
+LEFT JOIN product_variants pv
+    ON p.product_id = pv.product_id
+
+WHERE c.category_key IN ($catPlaceholders)
+AND p.product_id != ?
+AND pv.quantity > 0
+
+GROUP BY p.product_id
+
+ORDER BY match_score DESC, RAND()
+
+LIMIT 4
+";
+
+$types = "s";
+$types .= str_repeat("s", count($targetColors));
+$types .= "dd";
+$types .= "s";
+$types .= str_repeat("s", count($matchCategories));
+$types .= "i";
+
+$params = [];
+
+$params[] = $currentColor;
+
+foreach ($targetColors as $clr) {
+    $params[] = $clr;
+}
+
+$params[] = $currentPrice;
+$params[] = $currentPrice;
+$params[] = $lang;
+
+foreach ($matchCategories as $cat) {
+    $params[] = $cat;
+}
+
+$params[] = $product_id;
+
+$matchStmt = $conn->prepare($matchSql);
+$matchStmt->bind_param($types, ...$params);
+$matchStmt->execute();
+$matchResult = $matchStmt->get_result();
 ?>
 <!doctype html>
 <html lang="<?= h($lang) ?>" <?= ($lang === 'ar' || $lang === 'he') ? 'dir="rtl"' : 'dir="ltr"' ?>>
@@ -206,6 +365,7 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
         .acc-inner{padding:0 0 18px;color:#666;font-size:13px;line-height:1.9}
 
         .recommend-wrap{margin-top:90px;padding-top:60px;border-top:1px solid #e3e3e3}
+
         .recommend-head{text-align:center;margin-bottom:42px}
         .recommend-head p{font-size:11px;text-transform:uppercase;letter-spacing:.28em;color:#777;margin-bottom:10px;font-weight:600}
         .recommend-head h2{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:400;letter-spacing:.08em}
@@ -213,6 +373,9 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
         .rec-card{position:relative;overflow:hidden;border-radius:4px;background:#ececec;cursor:pointer;aspect-ratio:3/4}
         .rec-card img{width:100%;height:100%;object-fit:cover;transition:.55s}
         .rec-card:hover img{transform:scale(1.06)}
+        .rec-overlay{position:absolute;left:0;right:0;bottom:0;padding:18px;background:linear-gradient(to top,rgba(0,0,0,.78),transparent);color:white}
+        .rec-name{font-family:'Cormorant Garamond',serif;font-size:26px;margin-bottom:4px}
+        .rec-meta{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
 
         .footer{margin-top:90px;padding:40px 22px;background:#fafafa;border-top:1px solid #e3e3e3;text-align:center;color:#777;font-size:12px}
         .sticky-bar{position:fixed;left:0;right:0;bottom:0;z-index:1200;transform:translateY(120%);transition:.4s;padding:0 16px 16px;pointer-events:none}
@@ -241,7 +404,7 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
             <span>New Collection Available</span>
             <span>Curated Essentials</span>
             <span>Timeless Clothing Drops</span>
-            <span>New Collection Available</span>
+            <span>Complete The Look</span>
         </div>
     </div>
 
@@ -249,7 +412,7 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
         <div class="header-inner">
             <div class="header-left">
                 <button onclick="location.href='index.php?lang=<?= h($lang) ?>'" class="icon-btn"><i data-lucide="home"></i></button>
-                <button onclick="location.href='search.php?lang=<?= h($lang) ?>'" class="icon-btn"><i data-lucide="search"></i></button>
+                <button onclick="location.href='newcolc.php?lang=<?= h($lang) ?>'" class="icon-btn"><i data-lucide="shopping-bag"></i></button>
             </div>
 
             <div class="brand">
@@ -295,8 +458,7 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
                     <div class="color-row" id="color-row">
                         <?php $first = true; ?>
                         <?php foreach ($colors as $c): ?>
-                            <button
-                                    type="button"
+                            <button type="button"
                                     class="color-dot <?= $first ? 'active' : '' ?>"
                                     data-color="<?= h($c) ?>"
                                     title="<?= h($c) ?>"
@@ -348,15 +510,32 @@ $firstColor = count($colors) ? array_values($colors)[0] : '';
 
         <section class="recommend-wrap">
             <div class="recommend-head">
-                <p>You May Also Like</p>
-                <h2>Recommended Pieces</h2>
+                <p>AI Outfit Match</p>
+                <h2>Complete The Look</h2>
             </div>
+
             <div class="recommend-grid">
-                <?php foreach (array_slice($images, 0, 4) as $img): ?>
-                    <article class="rec-card">
-                        <img src="<?= h($img) ?>" alt="Recommended">
-                    </article>
-                <?php endforeach; ?>
+                <?php if ($matchResult && $matchResult->num_rows > 0): ?>
+                    <?php while($m = $matchResult->fetch_assoc()): ?>
+                        <a href="item3.php?product_id=<?= (int)$m['product_id'] ?>&lang=<?= h($lang) ?>" class="rec-card">
+                            <img src="<?= h($m['image_url']) ?>" alt="<?= h($m['product_name']) ?>" onerror="this.src='pic/default.jpg'">
+
+                            <div class="rec-overlay">
+                                <div class="rec-name"><?= h($m['product_name']) ?></div>
+
+                                <div class="rec-meta">
+                                    <?= h($m['category_key']) ?> · $<?= h($m['price']) ?>
+                                </div>
+
+                                <div style="margin-top:8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;opacity:.9;">
+                                    ✨ Smart match · <?= h($m['match_color'] ?: 'style') ?>
+                                </div>
+                            </div>
+                        </a>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p>No matching pieces found.</p>
+                <?php endif; ?>
             </div>
         </section>
     </main>

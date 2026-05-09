@@ -16,6 +16,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $full_name = trim($_POST['full_name'] ?? "");
     $email = trim($_POST['email'] ?? "");
+    $phone = trim($_POST['phone'] ?? "");
     $password = trim($_POST['password'] ?? "");
     $confirm_password = trim($_POST['confirm_password'] ?? "");
     $agree = $_POST['agree'] ?? "";
@@ -23,6 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (
             empty($full_name) ||
             empty($email) ||
+            empty($phone) ||
             empty($password) ||
             empty($confirm_password)
     ) {
@@ -32,10 +34,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 
         $error = "Invalid email address";
-
-    } elseif (strlen($password) < 8) {
-
-        $error = "Password must be at least 8 characters";
 
     } elseif ($password !== $confirm_password) {
 
@@ -59,18 +57,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         } else {
 
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-
             $insert = $conn->prepare("
-                INSERT INTO users (full_name, email, password)
-                VALUES (?, ?, ?)
+                INSERT INTO users (full_name, email, phone, password)
+                VALUES (?, ?, ?, ?)
             ");
 
             $insert->bind_param(
-                    "sss",
+                    "ssss",
                     $full_name,
                     $email,
-                    $hashed_password
+                    $phone,
+                    $password
             );
 
             if ($insert->execute()) {
@@ -456,6 +453,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </div>
 
                 <div class="input-group">
+                    <i class="fa-solid fa-phone input-icon"></i>
+
+                    <label>Phone Number</label>
+
+                    <input
+                            type="text"
+                            name="phone"
+                            placeholder="Enter your phone number"
+                            required
+                    >
+                </div>
+
+                <div class="input-group">
                     <i class="fa-solid fa-lock input-icon"></i>
 
                     <label>Password</label>
@@ -513,23 +523,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <span>Or Continue With</span>
                 </div>
 
-                <button
-                        type="button"
-                        class="social-btn"
-                        onclick="alert('Google login will be added later')"
-                >
+                <a href="google_login.php" class="social-btn">
                     <i class="fa-brands fa-google"></i>
                     Continue with Google
-                </button>
+                </a>
 
-                <button
-                        type="button"
-                        class="social-btn"
-                        onclick="alert('Apple login will be added later')"
-                >
-                    <i class="fa-brands fa-apple"></i>
-                    Continue with Apple
-                </button>
 
                 <p class="signin-link">
                     Already have an account?

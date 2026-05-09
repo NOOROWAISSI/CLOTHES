@@ -1,18 +1,7 @@
 <?php
-session_start();
+global $conn;
+include "db.php";
 
-$host = "localhost";
-$user = "root";
-$pass = "";
-$dbname = "fashion_store";
-
-$conn = new mysqli($host, $user, $pass, $dbname);
-
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-$conn->set_charset("utf8mb4");
 
 $isLoggedIn = isset($_SESSION['user_id']);
 $currentUserName = "";
@@ -65,9 +54,6 @@ $text = [
                 'contact_us' => 'Contact Us',
                 'shop_new' => 'Shop New Collection',
                 'shop_categories' => 'Shop Categories',
-                'season' => 'Autumn / Winter 2025',
-                'hero_title' => 'Elegance<br>Redefined',
-                'hero_desc' => 'Timeless feminine pieces crafted for the modern woman who values grace, quality, and intention.',
                 'free_shipping' => 'Free Shipping on Orders Over $150',
                 'ethical' => 'Ethically Sourced Materials',
                 'sustainable' => 'Timeless & Sustainable',
@@ -88,6 +74,7 @@ $text = [
                 'big_text' => 'Big Text',
                 'contrast' => 'Contrast',
                 'no_motion' => 'No Motion',
+                'readable_font' => 'Readable Font',
                 'readable_font' => 'Readable Font',
                 'read_clicked' => '👆 Read Clicked Text',
                 'read_all' => '🔊 Read All Page',
@@ -258,6 +245,33 @@ $text = [
 ];
 
 $t = $text[$lang];
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+}
+
+$hero = null;
+
+$hero_stmt = $conn->prepare("
+    SELECT
+        c.collection_key,
+        COALESCE(ct.collection_name, c.collection_key) AS collection_name,
+        COALESCE(ct.description, '') AS description
+    FROM collections c
+    LEFT JOIN collection_translations ct
+        ON c.collection_id = ct.collection_id
+        AND ct.language_code = ?
+    WHERE c.is_new = 1
+    ORDER BY c.collection_id DESC
+    LIMIT 1
+");
+
+$hero_stmt->bind_param("s", $lang);
+$hero_stmt->execute();
+$hero_result = $hero_stmt->get_result();
+
+if ($hero_result && $hero_result->num_rows > 0) {
+    $hero = $hero_result->fetch_assoc();
+}
 
 $products_sql = "
 SELECT 
@@ -575,6 +589,14 @@ function langUrl($newLang) {
         .cats-marquee:hover .cats-track {
             animation-play-state: paused;
         }
+        .cat-card img {
+            filter: grayscale(100%);
+            transition: 0.7s;
+        }
+
+        .cat-card:hover img {
+            filter: grayscale(0%);
+        }
 
         @media (max-width: 768px) {
             .cat-card {
@@ -808,9 +830,7 @@ function langUrl($newLang) {
                     </div>
                 </div>
 
-                <button onclick="goPage('search.php?lang=<?= htmlspecialchars($lang) ?>', true)">
-                    <i data-lucide="search" style="width:18px;height:18px;"></i>
-                </button>
+
 
                 <button onclick="goUserPage()">
                     <i data-lucide="user" style="width:18px;height:18px;"></i>
@@ -862,15 +882,15 @@ function langUrl($newLang) {
     <section id="hero" class="w-full relative flex items-center justify-center">
         <div class="relative z-10 text-center px-6 max-w-4xl mx-auto pt-20 pb-16">
             <p class="text-xs tracking-[0.4em] uppercase mb-6 anim-fade-up delay-1" style="color:rgba(255,255,255,0.85);">
-                <?= $t['season'] ?>
+                <?= h($hero['collection_key'] ?? $t['season']) ?>
             </p>
 
             <h1 class="font-display text-5xl sm:text-7xl md:text-8xl font-light leading-[0.95] mb-6 anim-fade-up delay-2" style="color:#fff;">
-                <?= $t['hero_title'] ?>
+                <?= nl2br(h($hero['collection_name'] ?? str_replace('<br>', "\n", $t['hero_title']))) ?>
             </h1>
 
             <p class="text-sm sm:text-base font-light tracking-wide max-w-md mx-auto mb-10 anim-fade-up delay-3" style="color:rgba(255,255,255,0.9);">
-                <?= $t['hero_desc'] ?>
+                <?= h($hero['description'] ?? $t['hero_desc']) ?>
             </p>
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center anim-fade-up delay-4">
@@ -962,8 +982,11 @@ function langUrl($newLang) {
                         <?php while($cat = $categories_result->fetch_assoc()): ?>
                             <a href="newcolc.php?lang=<?= htmlspecialchars($lang) ?>&category=<?= urlencode($cat['category_key']) ?>" class="cat-card">
 
-                                <img src="pic/<?= htmlspecialchars(imgName($cat['category_key'])) ?>"
-                                     alt="<?= htmlspecialchars($cat['category_name']) ?>">
+                                <img
+                                        src="pic/<?= htmlspecialchars(imgName($cat['category_key'])) ?>"
+                                        alt="<?= htmlspecialchars($cat['category_name']) ?>"
+                                        class="grayscale hover:grayscale-0 transition duration-700"
+                                >
 
                                 <span><?= htmlspecialchars($cat['category_name']) ?></span>
 
